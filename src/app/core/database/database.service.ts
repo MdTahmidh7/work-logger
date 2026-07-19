@@ -1,16 +1,19 @@
 import { Dexie, Table } from 'dexie';
 import { WorkLog, BackupData } from '../models/work-log.model';
+import { Attendance } from '../../features/attendance/models/attendance.model';
 
 const DB_NAME = 'personal-work-log-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export class DatabaseService extends Dexie {
   workLogs!: Table<WorkLog, number>;
+  attendance!: Table<Attendance, number>;
 
   constructor() {
     super(DB_NAME);
     this.version(DB_VERSION).stores({
-      workLogs: '++id, title, date, createdAt'
+      workLogs: '++id, title, date, createdAt',
+      attendance: '++id, date, status, createdAt'
     });
   }
 
@@ -86,6 +89,7 @@ export class DatabaseService extends Dexie {
 
   async clearAll(): Promise<void> {
     await this.workLogs.clear();
+    await this.attendance.clear();
   }
 
   async getStats(startDate?: string, endDate?: string): Promise<{

@@ -3,9 +3,10 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { db } from '../../core/database/database.service';
+import { AttendanceService } from '../attendance/services/attendance.service';
 import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { BackupData } from '../../core/models/work-log.model';
+import { AttendanceBackupData } from '../attendance/models/attendance.model';
 
 @Component({
   standalone: true,
@@ -25,7 +26,7 @@ import { BackupData } from '../../core/models/work-log.model';
           </div>
           <div class="section-content">
             <h3>Export Data</h3>
-            <p>Download all your work logs as a JSON backup file.</p>
+            <p>Download all your work logs and attendance records as a JSON backup file.</p>
             <button mat-raised-button color="primary" (click)="exportData()">
               <mat-icon>download</mat-icon> Export Backup
             </button>
@@ -38,7 +39,7 @@ import { BackupData } from '../../core/models/work-log.model';
           </div>
           <div class="section-content">
             <h3>Import Data</h3>
-            <p>Restore work logs from a previously exported backup file.</p>
+            <p>Restore work logs and attendance from a previously exported backup file.</p>
             <input type="file" #fileInput accept=".json" (change)="onFileSelected($event)" style="display:none">
             <button mat-raised-button color="primary" (click)="fileInput.click()">
               <mat-icon>upload</mat-icon> Import Backup
@@ -48,8 +49,9 @@ import { BackupData } from '../../core/models/work-log.model';
                 <h4>Preview</h4>
                 <div class="preview-stats">
                   <span>{{ previewData()!.data.workLogs.length }} work logs</span>
+                  <span>{{ previewData()!.data.attendance.length }} attendance records</span>
                   <span>Exported: {{ formatDate(previewData()!.exportedAt) }}</span>
-                  <span>App version: {{ previewData()!.version }}</span>
+                  <span>Version: {{ previewData()!.version }}</span>
                 </div>
                 <div class="preview-actions">
                   <button mat-stroked-button (click)="previewData.set(null)">Cancel</button>
@@ -66,7 +68,7 @@ import { BackupData } from '../../core/models/work-log.model';
           </div>
           <div class="section-content">
             <h3>Clear All Data</h3>
-            <p>Permanently delete all work logs. This action cannot be undone.</p>
+            <p>Permanently delete all work logs and attendance records. This action cannot be undone.</p>
             <button mat-stroked-button (click)="clearAll()" style="color:var(--pwl-danger);border-color:var(--pwl-danger);">
               <mat-icon>delete</mat-icon> Clear All Data
             </button>
@@ -105,26 +107,27 @@ import { BackupData } from '../../core/models/work-log.model';
       border-radius: 12px; border: 1px solid var(--pwl-divider);
     }
     .preview-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
-    .preview-stats { display: flex; gap: 16px; font-size: 13px; color: var(--pwl-text-secondary); margin-bottom: 12px; }
+    .preview-stats { display: flex; gap: 16px; font-size: 13px; color: var(--pwl-text-secondary); margin-bottom: 12px; flex-wrap: wrap; }
     .preview-actions { display: flex; gap: 8px; }
   `]
 })
 export class SettingsComponent {
   private confirm = inject(ConfirmDialogService);
   private notify = inject(NotificationService);
+  private attendanceService = inject(AttendanceService);
 
-  previewData = signal<BackupData | null>(null);
-  private pendingData: BackupData | null = null;
+  previewData = signal<AttendanceBackupData | null>(null);
+  private pendingData: AttendanceBackupData | null = null;
 
   async exportData(): Promise<void> {
     try {
-      const data = await db.exportLogs();
+      const data = await this.attendanceService.exportAttendance();
       const json = JSON.stringify(data, null, 2);
       const blob = new Blob([json], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `work-log-backup-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `worklog-backup-${new Date().toISOString().split('T')[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
       this.notify.success('Backup exported successfully');
@@ -140,8 +143,8 @@ export class SettingsComponent {
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const data = JSON.parse(reader.result as string) as BackupData;
-        if (!data.data?.workLogs) {
+        const data = JSON.parse(reader.result as string) as AttendanceBackupData;
+        if (!data.data?.workLogs && !data.data?.attendance) {
           this.notify.error('Invalid backup file format');
           return;
         }
@@ -156,14 +159,22 @@ export class SettingsComponent {
 
   async confirmImport(): Promise<void> {
     if (!this.pendingData) return;
+    const workLogCount = this.pendingData.data.workLogs?.length || 0;
+    const attendanceCount = this.pendingData.data.attendance?.length || 0;
+
     const ok = await this.confirm.confirm(
       'Import Data',
-      `This will replace all existing data with ${this.pendingData.data.workLogs.length} work logs. Continue?`
+      `This will replace all existing data with ${workLogCount} work logs and ${attendanceCount} attendance records. Continue?`
     );
     if (ok) {
       try {
-        await db.importLogs(this.pendingData);
-        this.notify.success(`Imported ${this.pendingData.data.workLogs.length} work logs`);
+        if (this.pendingData.data.workLogs) {
+          await db.importLogs({ ...this.pendingData, data: { workLogs: this.pendingData.data.workLogs } } as any);
+        }
+        if (this.pendingData.data.attendance) {
+          await this.attendanceService.importAttendance(this.pendingData);
+        }
+        this.notify.success(`Imported ${workLogCount} work logs and ${attendanceCount} attendance records`);
         this.previewData.set(null);
         this.pendingData = null;
       } catch {
@@ -175,7 +186,7 @@ export class SettingsComponent {
   async clearAll(): Promise<void> {
     const ok = await this.confirm.confirm(
       'Clear All Data',
-      'This will permanently delete all your work logs. This cannot be undone.'
+      'This will permanently delete all your work logs and attendance records. This cannot be undone.'
     );
     if (ok) {
       await db.clearAll();

@@ -30,6 +30,10 @@ import { MatButtonModule } from '@angular/material/button';
           <mat-icon>add_circle</mat-icon>
           <span>Add Log</span>
         </a>
+        <a routerLink="/attendance" routerLinkActive="active" class="nav-link">
+          <mat-icon>fingerprint</mat-icon>
+          <span>Attendance</span>
+        </a>
         <a routerLink="/settings" routerLinkActive="active" class="nav-link">
           <mat-icon>settings</mat-icon>
           <span>Settings</span>
