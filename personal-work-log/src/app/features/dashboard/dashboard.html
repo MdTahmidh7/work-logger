@@ -1,0 +1,110 @@
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <div class="header-content">
+      <h1>Welcome to Personal Work Logger</h1>
+      <p class="subtitle">Track and visualize your productivity journey</p>
+    </div>
+  </div>
+
+  <div class="loading-overlay" *ngIf="loading()">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Loading dashboard...</p>
+  </div>
+
+  <div class="dashboard-content" *ngIf="!loading() && currentStats()">
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+      <app-statistic-card
+        [data]="{
+          icon: 'task_alt',
+          iconColor: '#667eea',
+          value: currentStats()!.totalTasks,
+          label: 'Total Tasks',
+          change: currentStats()!.changeFromPreviousDay,
+          changeType: currentStats()!.changeFromPreviousDay >= 0 ? 'increase' : 'decrease',
+          trendValue: 1
+        }
+      " />
+
+      <app-statistic-card
+        [data]="{
+          icon: 'access_time',
+          iconColor: '#f093fb',
+          value: currentStats()!.totalHours.toFixed(1),
+          label: 'Total Hours',
+          change: currentStats()!.hoursChangeFromPreviousDay,
+          changeType: currentStats()!.hoursChangeFromPreviousDay >= 0 ? 'increase' : 'decrease',
+          trendValue: 1
+        }
+      " />
+
+      <app-statistic-card
+        [data]="{
+          icon: 'insights',
+          iconColor: '#4facfe',
+          value: currentStats()!.averageHoursPerDay.toFixed(1),
+          label: 'Avg Hours/Day',
+          change: 0,
+          changeType: 'neutral',
+          trendValue: 1
+        }
+      " />
+
+      <app-statistic-card
+        [data]="{
+          icon: 'star',
+          iconColor: '#43e97b',
+          value: currentStats()!.longestWorkingDay.hours.toFixed(1),
+          label: 'Longest Day',
+          change: 0,
+          changeType: 'neutral',
+          trendValue: currentStats()!.longestWorkingDay.date
+        }
+      " />
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-section">
+      <div class="chart-row">
+        <app-chart-card
+          [data]="{
+            title: 'Hours Per Day',
+            subtitle: 'Daily work duration visualization',
+            type: 'line',
+            data: {
+              labels: chartData()!.labels,
+              values: chartData()!.values
+            }
+          }
+        " />
+
+        <app-chart-card
+          [data]="{
+            title: 'Tasks Per Day',
+            subtitle: 'Daily task count',
+            type: 'bar',
+            data: {
+              labels: tasksChartData()!.labels,
+              values: tasksChartData()!.values
+            }
+          }
+        " />
+      </div>
+    </div>
+
+    <!-- Date Filter -->
+    <div class="filter-section">
+      <app-date-filter (filterChange)="onFilterChange($event)"></app-date-filter>
+    </div>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading() && !currentStats()">
+    <mat-icon class="empty-icon">analytics</mat-icon>
+    <h2>No Data Available</h2>
+    <p>Add your first work log to see your productivity statistics</p>
+    <button mat-raised-button color="primary" routerLink="/work-log">
+      <mat-icon>add</mat-icon>
+      Add Work Log
+    </button>
+  </div>
+</div>

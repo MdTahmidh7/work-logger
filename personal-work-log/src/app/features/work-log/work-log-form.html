@@ -1,0 +1,192 @@
+<mat-card class="work-log-form-card">
+  <mat-card-header>
+    <div class="form-header">
+      <div class="form-icon">
+        <mat-icon>schedule</mat-icon>
+      </div>
+      <div class="form-title-group">
+        <mat-card-title>{{ isEditing ? 'Edit Work Log' : 'Add New Work Log' }}</mat-card-title>
+        <mat-card-subtitle>
+          {{ isEditing ? 'Update your work entry details' : 'Track your productive time and achievements' }}
+        </mat-card-subtitle>
+      </div>
+    </div>
+  </mat-card-header>
+
+  <mat-card-content>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <div class="form-section">
+        <h3 class="section-title">
+          <mat-icon>description</mat-icon>
+          Task Information
+        </h3>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="title-field">
+            <mat-label>Task Title</mat-label>
+            <input matInput formControlName="title" placeholder="What did you work on?" maxlength="100">
+            <mat-error *ngIf="hasError('title', 'required')">Task title is required</mat-error>
+            <mat-error *ngIf="hasError('title', 'maxlength')">Title is too long (max 100 characters)</mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="details-field">
+            <mat-label>Task Details (Optional)</mat-label>
+            <textarea matInput formControlName="details" placeholder="Add any additional notes, context, or descriptions about your work..." rows="4" maxlength="500"></textarea>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">
+          <mat-icon>access_time</mat-icon>
+          Duration & Timing
+        </h3>
+
+        <div class="duration-selector">
+          <div class="duration-inputs">
+            <mat-form-field appearance="outline" class="duration-field">
+              <mat-label>Hours</mat-label>
+              <input matInput type="number" formControlName="hours" min="0" max="24"
+                     (input)="hoursControl?.setValue($event.target.value)"
+                     placeholder="0">
+              <mat-error *ngIf="hasError('hours', 'min')">Hours cannot be negative</mat-error>
+              <mat-error *ngIf="hasError('hours', 'max')">Maximum 24 hours</mat-error>
+            </mat-form-field>
+
+            <div class="minutes-field">
+              <mat-label>Minutes</mat-label>
+              <div class="minutes-input-wrapper">
+                <input matInput type="number" formControlName="minutes" min="0" max="59"
+                       (input)="minutesControl?.setValue($event.target.value)"
+                       placeholder="0" class="minutes-input">
+              </div>
+              <mat-error *ngIf="hasError('minutes', 'min')">Minutes cannot be negative</mat-error>
+              <mat-error *ngIf="hasError('minutes', 'max')">Maximum 59 minutes</mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="duration-total">
+            <div class="total-duration">
+              <mat-icon>schedule</mat-icon>
+              <span class="total-text">{{ getDurationText() }}</span>
+            </div>
+            <div class="duration-warning" *ngIf="!isValidDuration(durationMinutes)">
+              <mat-icon>warning</mat-icon>
+              <span>Duration must be between 1 minute and 24 hours</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="quick-duration-selector">
+          <label class="quick-duration-label">Quick Duration</label>
+          <div class="duration-buttons">
+            <button
+              *ngFor="let option of durationOptions"
+              mat-stroked-button
+              type="button"
+              (click)="setQuickDuration(option)"
+              class="duration-button"
+            >
+              <mat-icon>access_time</mat-icon>
+              {{ option.label }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">
+          <mat-icon>calendar_today</mat-icon>
+          Date & Metadata
+        </h3>
+
+        <div class="form-row date-row">
+          <mat-form-field appearance="outline" class="date-field">
+            <mat-label>Work Date</mat-label>
+            <input matInput [value]="form.get('date')?.value" (input)="form.patchValue({date: $event.target.value})"
+                   type="date" [min]="todayDate" [max]="maxDate"
+                   placeholder="Select date">
+            <mat-error *ngIf="hasError('date', 'required')">Date is required</mat-error>
+          </mat-form-field>
+
+          <div class="date-info">
+            <div class="info-item" *ngIf="workLog?.createdAt">
+              <mat-icon>add_circle</mat-icon>
+              <div class="info-text">
+                <span class="info-label">Created:</span>
+                <span class="info-value">{{ workLog?.createdAt | date:'medium' }}</span>
+              </div>
+            </div>
+            <div class="info-item" *ngIf="workLog?.updatedAt && workLog?.updatedAt !== workLog?.createdAt">
+              <mat-icon>edit</mat-icon>
+              <div class="info-text">
+                <span class="info-label">Last Updated:</span>
+                <span class="info-value">{{ workLog?.updatedAt | date:'medium' }}</span>
+              </div>
+            </div>
+            <div class="info-item" *ngIf="workLog?.createdAt">
+              <mat-icon>schedule</mat-icon>
+              <div class="info-text">
+                <span class="info-label">Time Added:</span>
+                <span class="info-value">{{ getTimeAgo(workLog!.createdAt) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section" *ngIf="showDetails || workLog">
+        <h3 class="section-title">
+          <mat-icon>info</mat-icon>
+          Entry Details
+        </h3>
+
+        <div class="details-grid">
+          <div class="detail-item">
+            <span class="detail-label">Total Duration:</span>
+            <span class="detail-value">{{ durationMinutes }} minutes</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Hours:</span>
+            <span class="detail-value">{{ hoursControl?.value || 0 }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Minutes:</span>
+            <span class="detail-value">{{ minutesControl?.value || 0 }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Date:</span>
+            <span class="detail-value">{{ form.get('date')?.value }}</span>
+          </div>
+        </div>
+      </div>
+    </form>
+  </mat-card-content>
+
+  <mat-divider></mat-divider>
+
+  <mat-card-actions class="form-actions">
+    <button mat-stroked-button type="button" (click)="resetForm()" [disabled]="isSubmitting">
+      <mat-icon>cancel</mat-icon>
+      Cancel
+    </button>
+    <button mat-raised-button color="primary" type="submit" form="work-form"
+            [disabled]="form.invalid || isSubmitting || !isValidDuration(durationMinutes)">
+      <mat-icon *ngIf="!isSubmitting">save</mat-icon>
+      <mat-spinner *ngIf="isSubmitting" diameter="20"></mat-spinner>
+      <span *ngIf="!isSubmitting">
+        {{ isEditing ? 'Update Entry' : 'Save Entry' }}
+      </span>
+      <span *ngIf="isSubmitting">Saving...</span>
+    </button>
+  </mat-card-actions>
+
+  <div class="form-validation-summary" *ngIf="form.invalid && form.touched">
+    <div class="validation-message">
+      <mat-icon>warning</mat-icon>
+      <span>Please fix the validation errors before saving</span>
+    </div>
+  </div>
+</mat-card>

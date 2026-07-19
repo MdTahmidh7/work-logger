@@ -30,11 +30,14 @@
         },
         "@schematics/angular:service": {
           "skipTests": true
+        },
+        "@schematics/angular:component-factory": {
+          "skipTests": true
         }
       },
       "root": "",
       "sourceRoot": "src",
-      "prefix": "app",
+      "prefix": "pwl",
       "architect": {
         "build": {
           "builder": "@angular-devkit/build-angular:application",

@@ -1,0 +1,54 @@
+<mat-toolbar color="primary" class="header-toolbar">
+  <div class="header-left">
+    <button mat-icon-button class="menu-toggle" *ngIf="false" (click)="toggleSidenav()">
+      <mat-icon>menu</mat-icon>
+    </button>
+    <div class="brand">
+      <mat-icon class="brand-icon">schedule</mat-icon>
+      <span class="brand-text">{{ title }}</span>
+    </div>
+  </div>
+
+  <div class="header-content" *ngIf="false">
+    <h1 class="page-title">{{ title }}</h1>
+    <p class="page-subtitle">{{ subtitle }}</p>
+  </div>
+
+  <div class="header-right">
+    <div class="stats-summary" *ngIf="false">
+      <div class="stat-item">
+        <mat-icon class="stat-icon">task_alt</mat-icon>
+        <span class="stat-value">{{ totalTasks }}</span>
+        <span class="stat-label">Tasks</span>
+      </div>
+      <div class="stat-item">
+        <mat-icon class="stat-icon">access_time</mat-icon>
+        <span class="stat-value">{{ totalHours.toFixed(1) }}</span>
+        <span class="stat-label">Hours</span>
+      </div>
+    </div>
+
+    <button mat-icon-button class="theme-toggle" (click)="toggleTheme()">
+      <mat-icon>{{ currentTheme === 'light' ? 'dark_mode' : 'light_mode' }}</mat-icon>
+    </button>
+
+    <button mat-icon-button class="profile-menu" matMenuTriggerFor="userMenu">
+      <mat-icon>account_circle</mat-icon>
+    </button>
+
+    <mat-menu #userMenu="matMenu">
+      <button mat-menu-item (click)="openHelp()">
+        <mat-icon>help</mat-icon>
+        <span>Help</span>
+      </button>
+      <button mat-menu-item (click)="openAbout()">
+        <mat-icon>info</mat-icon>
+        <span>About</span>
+      </button>
+    </mat-menu>
+  </div>
+</mat-toolbar>
+
+<ng-content></ng-content>
+
+<router-outlet></router-outlet>
