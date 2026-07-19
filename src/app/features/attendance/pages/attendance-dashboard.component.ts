@@ -3,18 +3,28 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { FormsModule } from '@angular/forms';
 import { AttendanceActionButtonComponent } from '../components/attendance-action-button.component';
 import { TodayAttendanceCardComponent } from '../components/today-attendance-card.component';
 import { AttendanceStatCardComponent } from '../components/attendance-stat-card.component';
 import { AttendanceService } from '../services/attendance.service';
 import { Attendance } from '../models/attendance.model';
 import { NotificationService } from '../../../core/services/notification.service';
-import { format, subDays } from 'date-fns';
+import { format, subDays, eachDayOfInterval, parseISO } from 'date-fns';
+
+interface DayRow {
+  date: string;
+  dayName: string;
+  isFriday: boolean;
+  isSaturday: boolean;
+  attendance: Attendance | null;
+  isToday: boolean;
+}
 
 @Component({
   standalone: true,
   selector: 'app-attendance-dashboard',
-  imports: [CommonModule, RouterModule, MatIconModule, MatButtonModule,
+  imports: [CommonModule, RouterModule, MatIconModule, MatButtonModule, FormsModule,
             AttendanceActionButtonComponent, TodayAttendanceCardComponent,
             AttendanceStatCardComponent],
   template: `
@@ -52,55 +62,98 @@ import { format, subDays } from 'date-fns';
 
         <div class="recent-section">
           <div class="section-header">
-            <h2>Recent Attendance (Last 30 Days)</h2>
-          </div>
-          @if (recentRecords().length === 0) {
-            <div class="empty-state">
-              <mat-icon>event_busy</mat-icon>
-              <h3>No attendance records</h3>
-              <p>Start punching in to track your attendance.</p>
-            </div>
-          } @else {
-            <div class="attendance-table">
-              <div class="table-header">
-                <div class="th">Date</div>
-                <div class="th">Day</div>
-                <div class="th">Punch In</div>
-                <div class="th">Punch Out</div>
-                <div class="th">Working Hour</div>
-                <div class="th">Status</div>
+            <h2>
+              <mat-icon>calendar_today</mat-icon>
+              Attendance History
+            </h2>
+            <div class="date-range-filter">
+              <div class="range-input">
+                <mat-icon>event</mat-icon>
+                <input type="date" [value]="filterStart()" (change)="onFilterStartChange($event)" class="date-input">
               </div>
-              @for (record of recentRecords(); track record.id) {
-                <div class="table-row"
-                     [class.workday]="!isWeekend(record.date)"
-                     [class.friday]="isFriday(record.date)"
-                     [class.saturday]="isSaturday(record.date)">
-                  <div class="td">{{ formatDate(record.date) }}</div>
-                  <div class="td day-cell" [class.holiday]="isFriday(record.date) || isSaturday(record.date)">
-                    {{ getDayName(record.date) }}
-                  </div>
-                  <div class="td punch-in-cell">{{ formatTime(record.firstPunchIn) }}</div>
-                  <div class="td punch-out-cell">
-                    @if (record.lastPunchOut) {
-                      {{ formatTime(record.lastPunchOut) }}
-                    } @else {
-                      --
-                    }
-                  </div>
-                  <div class="td hours-cell">
-                    <span class="hours-badge" [class.friday-badge]="isFriday(record.date)" [class.saturday-badge]="isSaturday(record.date)">
-                      {{ formatWorkingHours(record.workingMinutes) }}
-                    </span>
-                  </div>
-                  <div class="td">
-                    <span class="status-badge" [class]="record.status">
-                      {{ formatStatus(record.status) }}
-                    </span>
-                  </div>
-                </div>
-              }
+              <span class="range-sep">to</span>
+              <div class="range-input">
+                <mat-icon>event</mat-icon>
+                <input type="date" [value]="filterEnd()" [max]="maxDate()" (change)="onFilterEndChange($event)" class="date-input">
+              </div>
+              <span class="days-info">{{ dayRows().length }} days</span>
             </div>
-          }
+          </div>
+          <div class="attendance-table">
+            <div class="table-header">
+              <div class="th icon-col"></div>
+              <div class="th">Date</div>
+              <div class="th">Day</div>
+              <div class="th">Punch In</div>
+              <div class="th">Punch Out</div>
+              <div class="th">Working Hour</div>
+              <div class="th">Status</div>
+              <div class="th"></div>
+            </div>
+            @for (row of dayRows(); track row.date) {
+              <div class="table-row"
+                   [class.absent-row]="!row.attendance"
+                   [class.workday]="row.attendance && !row.isFriday && !row.isSaturday"
+                   [class.friday]="row.isFriday"
+                   [class.saturday]="row.isSaturday"
+                   [class.today]="row.isToday">
+                <div class="td icon-col">
+                  @if (row.attendance) {
+                    <div class="status-dot" [class]="row.attendance.status"></div>
+                  } @else {
+                    <div class="status-dot absent"></div>
+                  }
+                </div>
+                <div class="td date-cell">
+                  <span class="date-text">{{ formatDate(row.date) }}</span>
+                </div>
+                <div class="td day-cell" [class.holiday]="row.isFriday || row.isSaturday">
+                  {{ row.dayName }}
+                </div>
+                <div class="td punch-in-cell">
+                  @if (row.attendance) {
+                    <mat-icon class="cell-icon punch-in-icon">login</mat-icon>
+                    <span>{{ formatTime(row.attendance.firstPunchIn) }}</span>
+                  } @else {
+                    <span class="no-data">--</span>
+                  }
+                </div>
+                <div class="td punch-out-cell">
+                  @if (row.attendance?.lastPunchOut) {
+                    <mat-icon class="cell-icon punch-out-icon">logout</mat-icon>
+                    <span>{{ formatTime(row.attendance!.lastPunchOut!) }}</span>
+                  } @else {
+                    <span class="no-data">--</span>
+                  }
+                </div>
+                <div class="td hours-cell">
+                  @if (row.attendance && row.attendance.workingMinutes > 0) {
+                    <span class="hours-badge" [class.friday-badge]="row.isFriday" [class.saturday-badge]="row.isSaturday">
+                      {{ formatWorkingHours(row.attendance.workingMinutes) }}
+                    </span>
+                  } @else {
+                    <span class="no-data">--</span>
+                  }
+                </div>
+                <div class="td status-cell">
+                  @if (row.attendance) {
+                    <span class="status-badge" [class]="row.attendance.status">
+                      {{ formatStatus(row.attendance.status) }}
+                    </span>
+                  } @else {
+                    <span class="status-badge absent">Absent</span>
+                  }
+                </div>
+                <div class="td actions-cell">
+                  @if (row.attendance) {
+                    <a [routerLink]="['/attendance/edit', row.attendance.id]" class="edit-link">
+                      <mat-icon class="edit-icon">edit</mat-icon>
+                    </a>
+                  }
+                </div>
+              </div>
+            }
+          </div>
         </div>
       </div>
     </div>
@@ -143,28 +196,74 @@ import { format, subDays } from 'date-fns';
       padding: 32px;
     }
 
-    .card-section {
-      min-width: 0;
-    }
+    .card-section { min-width: 0; }
 
     .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
 
     .recent-section {
       background: var(--pwl-surface); border-radius: 14px; border: 1px solid var(--pwl-divider); overflow: hidden;
     }
-    .section-header { padding: 14px 20px; border-bottom: 1px solid var(--pwl-divider); }
-    .section-header h2 { font-size: 15px; font-weight: 600; }
 
-    .empty-state { text-align: center; padding: 40px 20px; }
-    .empty-state mat-icon { font-size: 40px; width: 40px; height: 40px; color: var(--pwl-text-tertiary); margin-bottom: 10px; }
-    .empty-state h3 { font-size: 14px; font-weight: 600; color: var(--pwl-text-primary); margin-bottom: 4px; }
-    .empty-state p { color: var(--pwl-text-secondary); font-size: 13px; }
+    .section-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--pwl-divider);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .section-header h2 {
+      font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px;
+    }
+    .section-header h2 mat-icon { font-size: 20px; width: 20px; height: 20px; color: var(--pwl-primary); }
+
+    .date-range-filter {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .range-input {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      background: var(--pwl-surface-variant);
+      border-radius: 8px;
+      border: 1px solid var(--pwl-divider);
+    }
+    .range-input mat-icon { font-size: 16px; width: 16px; height: 16px; color: var(--pwl-text-secondary); }
+
+    .date-input {
+      border: none;
+      background: transparent;
+      font-size: 12px;
+      font-family: 'Inter', sans-serif;
+      color: var(--pwl-text-primary);
+      outline: none;
+      width: 100px;
+    }
+
+    .range-sep { color: var(--pwl-text-tertiary); font-size: 12px; }
+
+    .days-info {
+      font-size: 12px;
+      color: var(--pwl-text-secondary);
+      font-weight: 500;
+      padding: 4px 10px;
+      background: var(--pwl-primary-light);
+      border-radius: 6px;
+      color: var(--pwl-primary);
+    }
 
     .attendance-table { width: 100%; }
 
     .table-header {
       display: grid;
-      grid-template-columns: 100px 90px 100px 100px 110px 100px;
+      grid-template-columns: 40px 100px 80px 120px 120px 110px 100px 50px;
       padding: 10px 20px;
       border-bottom: 1px solid var(--pwl-divider);
       background: var(--pwl-surface-variant);
@@ -180,7 +279,7 @@ import { format, subDays } from 'date-fns';
 
     .table-row {
       display: grid;
-      grid-template-columns: 100px 90px 100px 100px 110px 100px;
+      grid-template-columns: 40px 100px 80px 120px 120px 110px 100px 50px;
       padding: 10px 20px;
       border-bottom: 1px solid var(--pwl-divider);
       align-items: center;
@@ -190,17 +289,37 @@ import { format, subDays } from 'date-fns';
     .table-row:last-child { border-bottom: none; }
     .table-row:hover { filter: brightness(0.97); }
 
-    .table-row.workday { background: rgba(13, 148, 136, 0.04); }
-    .table-row.friday { background: rgba(255, 204, 0, 0.06); }
-    .table-row.saturday { background: rgba(255, 107, 107, 0.06); }
+    .table-row.today { border-left: 3px solid var(--pwl-primary); }
+    .table-row.workday { background: rgba(13, 148, 136, 0.03); }
+    .table-row.friday { background: rgba(255, 204, 0, 0.05); }
+    .table-row.saturday { background: rgba(255, 107, 107, 0.05); }
+    .table-row.absent-row { background: rgba(156, 163, 175, 0.04); }
+    .table-row.absent-row.friday { background: rgba(255, 204, 0, 0.05); }
+    .table-row.absent-row.saturday { background: rgba(255, 107, 107, 0.05); }
 
-    .td { font-size: 13px; color: var(--pwl-text-primary); }
+    .td { font-size: 13px; color: var(--pwl-text-primary); display: flex; align-items: center; gap: 6px; }
+
+    .icon-col { justify-content: center; }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .status-dot.working { background: #0d9488; box-shadow: 0 0 6px rgba(13, 148, 136, 0.4); }
+    .status-dot.completed { background: #16a34a; }
+    .status-dot.absent { background: #d1d5db; }
+
+    .date-text { font-weight: 500; }
 
     .day-cell { color: var(--pwl-text-secondary); font-size: 12px; }
     .day-cell.holiday { font-weight: 600; }
 
-    .punch-in-cell { color: #0d9488; font-weight: 500; }
-    .punch-out-cell { color: #dc2626; font-weight: 500; }
+    .cell-icon { font-size: 14px; width: 14px; height: 14px; }
+    .punch-in-icon { color: #0d9488; }
+    .punch-out-icon { color: #dc2626; }
+
+    .no-data { color: var(--pwl-text-tertiary); }
 
     .hours-badge {
       display: inline-block; padding: 3px 8px; border-radius: 6px;
@@ -214,9 +333,20 @@ import { format, subDays } from 'date-fns';
       display: inline-block; padding: 3px 8px; border-radius: 6px;
       font-size: 11px; font-weight: 600; text-transform: capitalize;
     }
-    .status-badge.not_started { background: rgba(156, 163, 175, 0.15); color: #6b7280; }
+    .status-badge.absent { background: rgba(156, 163, 175, 0.15); color: #6b7280; }
     .status-badge.working { background: rgba(13, 148, 136, 0.15); color: #0d9488; }
     .status-badge.completed { background: rgba(34, 197, 94, 0.15); color: #16a34a; }
+
+    .actions-cell { justify-content: center; }
+
+    .edit-link {
+      display: flex; align-items: center; justify-content: center;
+      width: 30px; height: 30px; border-radius: 8px;
+      color: var(--pwl-text-secondary); transition: all 0.2s;
+      text-decoration: none;
+    }
+    .edit-link:hover { background: var(--pwl-primary-light); color: var(--pwl-primary); }
+    .edit-icon { font-size: 16px; width: 16px; height: 16px; }
 
     @media (max-width: 1024px) {
       .stats-grid { grid-template-columns: repeat(2, 1fr); }
@@ -226,11 +356,13 @@ import { format, subDays } from 'date-fns';
       .main-content { grid-template-columns: 1fr; }
       .stats-grid { grid-template-columns: 1fr; }
       .page-header { flex-direction: column; gap: 12px; }
+      .section-header { flex-direction: column; align-items: flex-start; }
       .table-header, .table-row {
-        grid-template-columns: 80px 70px 80px 80px 90px 80px;
-        padding: 8px 14px;
+        grid-template-columns: 32px 80px 60px 90px 90px 80px 80px 40px;
+        padding: 8px 12px;
         font-size: 11px;
       }
+      .cell-icon { display: none; }
     }
   `]
 })
@@ -239,8 +371,31 @@ export class AttendanceDashboardPageComponent implements OnInit {
   private notify = inject(NotificationService);
 
   todayAttendance = signal<Attendance | null>(null);
-  recentRecords = signal<Attendance[]>([]);
+  attendanceMap = signal<Map<string, Attendance>>(new Map());
   monthlyStats = signal<any>(null);
+  filterStart = signal(format(subDays(new Date(), 29), 'yyyy-MM-dd'));
+  filterEnd = signal(format(new Date(), 'yyyy-MM-dd'));
+  maxDate = signal(format(new Date(), 'yyyy-MM-dd'));
+
+  dayRows = computed(() => {
+    const start = parseISO(this.filterStart());
+    const end = parseISO(this.filterEnd());
+    const days = eachDayOfInterval({ start, end });
+    const map = this.attendanceMap();
+    const today = format(new Date(), 'yyyy-MM-dd');
+
+    return days.reverse().map(day => {
+      const dateStr = format(day, 'yyyy-MM-dd');
+      return {
+        date: dateStr,
+        dayName: day.toLocaleDateString('en-US', { weekday: 'short' }),
+        isFriday: day.getDay() === 5,
+        isSaturday: day.getDay() === 6,
+        attendance: map.get(dateStr) || null,
+        isToday: dateStr === today
+      };
+    });
+  });
 
   statsData = computed(() => {
     const stats = this.monthlyStats();
@@ -268,15 +423,50 @@ export class AttendanceDashboardPageComponent implements OnInit {
   async loadData(): Promise<void> {
     this.todayAttendance.set(await this.attendanceService.getTodayAttendance() || null);
 
-    const today = new Date();
-    const thirtyDaysAgo = subDays(today, 30);
-    const startDate = format(thirtyDaysAgo, 'yyyy-MM-dd');
-    const endDate = format(today, 'yyyy-MM-dd');
+    const records = await this.attendanceService.getAttendanceByDateRange(
+      this.filterStart(),
+      this.filterEnd()
+    );
 
-    const records = await this.attendanceService.getAttendanceByDateRange(startDate, endDate);
-    this.recentRecords.set(records.sort((a, b) => b.date.localeCompare(a.date)));
+    const map = new Map<string, Attendance>();
+    for (const record of records) {
+      map.set(record.date, record);
+    }
+    this.attendanceMap.set(map);
 
-    this.monthlyStats.set(await this.attendanceService.getMonthlyStatistics());
+    this.monthlyStats.set(await this.attendanceService.getMonthlyStatistics(
+      this.filterStart(),
+      this.filterEnd()
+    ));
+  }
+
+  onFilterStartChange(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    if (value) {
+      this.filterStart.set(value);
+      this.loadData();
+    }
+  }
+
+  onFilterEndChange(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    if (value) {
+      const start = parseISO(this.filterStart());
+      const end = parseISO(value);
+      const diffDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+
+      if (diffDays > 30) {
+        this.notify.warning('Maximum date range is 30 days');
+        return;
+      }
+      if (diffDays < 0) {
+        this.notify.warning('End date cannot be before start date');
+        return;
+      }
+
+      this.filterEnd.set(value);
+      this.loadData();
+    }
   }
 
   async handleAction(): Promise<void> {
@@ -299,10 +489,6 @@ export class AttendanceDashboardPageComponent implements OnInit {
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
 
-  getDayName(date: string): string {
-    return new Date(date).toLocaleDateString('en-US', { weekday: 'short' });
-  }
-
   formatTime(time: string): string {
     const [h, m] = time.split(':').map(Number);
     const period = h >= 12 ? 'PM' : 'AM';
@@ -313,23 +499,10 @@ export class AttendanceDashboardPageComponent implements OnInit {
   formatWorkingHours(minutes: number): string {
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
-    return `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
   }
 
   formatStatus(status: string): string {
     return status.replace('_', ' ');
-  }
-
-  isWeekend(date: string): boolean {
-    const day = new Date(date).getDay();
-    return day === 0 || day === 5 || day === 6;
-  }
-
-  isFriday(date: string): boolean {
-    return new Date(date).getDay() === 5;
-  }
-
-  isSaturday(date: string): boolean {
-    return new Date(date).getDay() === 6;
   }
 }

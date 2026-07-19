@@ -161,6 +161,14 @@ export class AttendanceService {
     return 0;
   }
 
+  async getAttendanceById(id: number): Promise<Attendance | undefined> {
+    return db.attendance.get(id);
+  }
+
+  async updateAttendance(id: number, data: Partial<Attendance>): Promise<void> {
+    await db.attendance.update(id, { ...data, updatedAt: new Date().toISOString() });
+  }
+
   private getTodayString(): string {
     return format(new Date(), 'yyyy-MM-dd');
   }

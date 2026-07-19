@@ -5,6 +5,7 @@ import { WorkLogListPageComponent } from './features/work-log/work-log-list-page
 import { SettingsComponent } from './features/settings/settings.component';
 import { AttendanceDashboardPageComponent } from './features/attendance/pages/attendance-dashboard.component';
 import { AttendanceHistoryPageComponent } from './features/attendance/pages/attendance-history.component';
+import { AttendanceEditPageComponent } from './features/attendance/pages/attendance-edit.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -14,6 +15,7 @@ export const routes: Routes = [
   { path: 'edit/:id', component: WorkLogFormComponent },
   { path: 'attendance', component: AttendanceDashboardPageComponent },
   { path: 'attendance/history', component: AttendanceHistoryPageComponent },
+  { path: 'attendance/edit/:id', component: AttendanceEditPageComponent },
   { path: 'settings', component: SettingsComponent },
   { path: '**', redirectTo: 'dashboard' }
 ];
