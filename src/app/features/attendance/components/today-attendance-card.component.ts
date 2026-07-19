@@ -20,7 +20,7 @@ import { Attendance } from '../models/attendance.model';
         <div class="info-row">
           <div class="info-item">
             <span class="info-label">First Punch In</span>
-            <span class="info-value">
+            <span class="info-value punch-in-color">
               @if (attendance()) {
                 {{ formatTime(attendance()!.firstPunchIn) }}
               } @else {
@@ -30,7 +30,7 @@ import { Attendance } from '../models/attendance.model';
           </div>
           <div class="info-item">
             <span class="info-label">Last Punch Out</span>
-            <span class="info-value">
+            <span class="info-value punch-out-color">
               @if (attendance()?.lastPunchOut) {
                 {{ formatTime(attendance()!.lastPunchOut!) }}
               } @else {
@@ -38,11 +38,10 @@ import { Attendance } from '../models/attendance.model';
               }
             </span>
           </div>
-        </div>
-
-        <div class="working-hours">
-          <span class="hours-label">Working Hour</span>
-          <span class="hours-value">{{ workingHours() }}</span>
+          <div class="info-item">
+            <span class="info-label">Working Hour</span>
+            <span class="info-value working-color">{{ workingHours() }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -53,6 +52,7 @@ import { Attendance } from '../models/attendance.model';
       border-radius: 14px;
       border: 1px solid var(--pwl-divider);
       overflow: hidden;
+      height: 100%;
     }
 
     .card-header {
@@ -97,9 +97,8 @@ import { Attendance } from '../models/attendance.model';
 
     .info-row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-      margin-bottom: 16px;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
     }
 
     .info-item {
@@ -120,26 +119,9 @@ import { Attendance } from '../models/attendance.model';
       color: var(--pwl-text-primary);
     }
 
-    .working-hours {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 16px;
-      background: var(--pwl-primary-light);
-      border-radius: 10px;
-    }
-
-    .hours-label {
-      font-size: 13px;
-      color: var(--pwl-text-secondary);
-      font-weight: 500;
-    }
-
-    .hours-value {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--pwl-primary);
-    }
+    .info-value.punch-in-color { color: #0d9488; }
+    .info-value.punch-out-color { color: #dc2626; }
+    .info-value.working-color { color: #6750a4; }
   `]
 })
 export class TodayAttendanceCardComponent {

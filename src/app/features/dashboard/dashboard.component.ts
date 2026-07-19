@@ -6,16 +6,23 @@ import { MatButtonModule } from '@angular/material/button';
 import { StatisticCardComponent } from '../../shared/components/statistic-card.component';
 import { ChartCardComponent } from '../../shared/components/chart-card.component';
 import { DateFilterComponent } from '../../shared/components/date-filter.component';
+import { TodayAttendanceCardComponent } from '../attendance/components/today-attendance-card.component';
+import { AttendanceActionButtonComponent } from '../attendance/components/attendance-action-button.component';
 import { db } from '../../core/database/database.service';
 import { DateUtilsService } from '../../core/services/date-utils.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { WorkLog } from '../../core/models/work-log.model';
+import { Attendance } from '../attendance/models/attendance.model';
+import { AttendanceService } from '../attendance/services/attendance.service';
+import { format, subDays } from 'date-fns';
 import * as XLSX from 'xlsx';
 
 @Component({
   standalone: true,
   selector: 'app-dashboard',
   imports: [CommonModule, RouterModule, MatIconModule, MatButtonModule,
-            StatisticCardComponent, ChartCardComponent, DateFilterComponent],
+            StatisticCardComponent, ChartCardComponent, DateFilterComponent,
+            TodayAttendanceCardComponent, AttendanceActionButtonComponent],
   template: `
     <div class="dashboard-wrapper">
       <div class="dashboard">
@@ -35,6 +42,17 @@ import * as XLSX from 'xlsx';
               <mat-icon>add</mat-icon>
               Add Work Log
             </a>
+          </div>
+        </div>
+
+        <div class="attendance-section">
+          <div class="attendance-action-wrapper">
+            <app-attendance-action-button
+              [attendance]="todayAttendance()"
+              (action)="handleAttendanceAction()" />
+          </div>
+          <div class="attendance-card-wrapper">
+            <app-today-attendance-card [attendance]="todayAttendance()" />
           </div>
         </div>
 
@@ -151,6 +169,27 @@ import * as XLSX from 'xlsx';
     }
     .add-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
 
+    .attendance-section {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .attendance-action-wrapper {
+      background: var(--pwl-surface);
+      border-radius: 14px;
+      border: 1px solid var(--pwl-divider);
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .attendance-card-wrapper {
+      min-width: 0;
+    }
+
     .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
 
     .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
@@ -259,6 +298,7 @@ import * as XLSX from 'xlsx';
       .page-header { flex-direction: column; gap: 12px; }
       .header-actions { width: 100%; }
       .download-btn, .add-btn { flex: 1; justify-content: center; }
+      .attendance-section { grid-template-columns: 1fr; }
       .table-header, .table-row {
         grid-template-columns: 70px 60px 1fr 70px 70px 36px;
         padding: 8px 14px;
@@ -268,10 +308,13 @@ import * as XLSX from 'xlsx';
 })
 export class DashboardComponent implements OnInit {
   private dateUtils = inject(DateUtilsService);
+  private attendanceService = inject(AttendanceService);
+  private notify = inject(NotificationService);
   private readonly PAGE_SIZE = 7;
 
   logs = signal<WorkLog[]>([]);
   currentPage = signal(0);
+  todayAttendance = signal<Attendance | null>(null);
 
   statsData = computed(() => {
     const all = this.logs();
@@ -365,11 +408,27 @@ export class DashboardComponent implements OnInit {
   async ngOnInit(): Promise<void> {
     const range = this.dateUtils.getDateRange('thisMonth');
     this.logs.set(await db.getLogsByRange(range.startDate, range.endDate));
+    this.todayAttendance.set(await this.attendanceService.getTodayAttendance() || null);
   }
 
   async onFilterChange(range: { startDate: string; endDate: string }): Promise<void> {
     this.currentPage.set(0);
     this.logs.set(await db.getLogsByRange(range.startDate, range.endDate));
+  }
+
+  async handleAttendanceAction(): Promise<void> {
+    try {
+      if (this.todayAttendance()) {
+        await this.attendanceService.updatePunchOut();
+        this.notify.success('Punch Out recorded successfully');
+      } else {
+        await this.attendanceService.createPunchIn();
+        this.notify.success('Punch In recorded successfully');
+      }
+      this.todayAttendance.set(await this.attendanceService.getTodayAttendance() || null);
+    } catch (error: any) {
+      this.notify.error(error.message || 'Failed to record attendance');
+    }
   }
 
   prevPage(): void {
