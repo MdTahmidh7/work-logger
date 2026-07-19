@@ -24,49 +24,49 @@ import { NotificationService } from '../../../core/services/notification.service
           </a>
           <div>
             <h1>Edit Attendance</h1>
-            <p class="subtitle">Update punch times for {{ formatDate() }}</p>
+            <p class="subtitle">{{ formatDate() }}</p>
           </div>
         </div>
 
-        @if (attendance()) {
-          <div class="form-card">
-            <form [formGroup]="form" (ngSubmit)="onSubmit()">
-              <div class="field-group">
-                <label class="field-label">Punch In</label>
-                <mat-form-field appearance="outline" class="time-field">
-                  <mat-label>Time</mat-label>
-                  <input matInput type="time" formControlName="firstPunchIn">
-                </mat-form-field>
-              </div>
+        <div class="form-card">
+          <form [formGroup]="form" (ngSubmit)="onSubmit()">
+            <div class="time-group">
+              <label class="field-label">Punch In</label>
+              <mat-form-field appearance="outline" class="time-field">
+                <mat-icon matPrefix class="field-icon punch-in-icon">login</mat-icon>
+                <mat-label>Time</mat-label>
+                <input matInput type="time" formControlName="firstPunchIn">
+              </mat-form-field>
+            </div>
 
-              <div class="field-group">
-                <label class="field-label">Punch Out</label>
-                <mat-form-field appearance="outline" class="time-field">
-                  <mat-label>Time</mat-label>
-                  <input matInput type="time" formControlName="lastPunchOut">
-                </mat-form-field>
-              </div>
+            <div class="time-group">
+              <label class="field-label">Punch Out</label>
+              <mat-form-field appearance="outline" class="time-field">
+                <mat-icon matPrefix class="field-icon punch-out-icon">logout</mat-icon>
+                <mat-label>Time</mat-label>
+                <input matInput type="time" formControlName="lastPunchOut">
+              </mat-form-field>
+            </div>
 
-              <div class="working-hour-preview">
-                <mat-icon>schedule</mat-icon>
-                <span>Working Hour: <strong>{{ calculatedWorkingHours() }}</strong></span>
-              </div>
+            <div class="working-hour-preview">
+              <mat-icon>schedule</mat-icon>
+              <span>Working Hour: <strong>{{ calculatedWorkingHours() }}</strong></span>
+            </div>
 
-              <div class="actions">
-                <a routerLink="/attendance" class="cancel-btn">Cancel</a>
-                <button type="submit" class="save-btn" [disabled]="form.invalid || saving()">
-                  <mat-icon>save</mat-icon>
-                  {{ saving() ? 'Saving...' : 'Save Changes' }}
-                </button>
-              </div>
-            </form>
-          </div>
-        } @else {
-          <div class="loading-state">
-            <mat-icon>hourglass_empty</mat-icon>
-            <p>Loading attendance record...</p>
-          </div>
-        }
+            <div class="status-preview">
+              <mat-icon [class]="getStatusClass()">{{ getStatusIcon() }}</mat-icon>
+              <span>Status: <strong [class]="getStatusClass()">{{ getStatus() }}</strong></span>
+            </div>
+
+            <div class="actions">
+              <a routerLink="/attendance" class="cancel-btn">Cancel</a>
+              <button type="submit" class="save-btn" [disabled]="form.invalid || saving()">
+                <mat-icon>save</mat-icon>
+                {{ saving() ? 'Saving...' : 'Save Changes' }}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   `,
@@ -96,7 +96,7 @@ import { NotificationService } from '../../../core/services/notification.service
       padding: 28px;
     }
 
-    .field-group { margin-bottom: 20px; }
+    .time-group { margin-bottom: 20px; }
     .field-label {
       display: block; font-size: 12px; font-weight: 600; color: var(--pwl-text-secondary);
       margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;
@@ -104,17 +104,52 @@ import { NotificationService } from '../../../core/services/notification.service
 
     .time-field { width: 100%; }
 
+    .field-icon { font-size: 20px; width: 20px; height: 20px; }
+    .punch-in-icon { color: #0d9488; }
+    .punch-out-icon { color: #dc2626; }
+
     :host ::ng-deep .mat-mdc-form-field {
       --mdc-outlined-text-field-container-shape: 10px;
+    }
+
+    :host ::ng-deep .mat-mdc-form-field .mat-mdc-text-field-wrapper {
+      background: var(--pwl-surface-variant);
+    }
+
+    :host ::ng-deep .mat-mdc-form-field .mat-mdc-form-field-focus-overlay {
+      background: var(--pwl-surface-variant);
     }
 
     .working-hour-preview {
       display: flex; align-items: center; gap: 8px;
       padding: 12px 16px; border-radius: 10px;
       background: var(--pwl-primary-light); color: var(--pwl-primary);
-      font-size: 14px; margin-bottom: 24px;
+      font-size: 14px; margin-bottom: 12px;
     }
     .working-hour-preview mat-icon { font-size: 20px; width: 20px; height: 20px; }
+
+    .status-preview {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 16px; border-radius: 10px;
+      font-size: 14px; margin-bottom: 24px;
+    }
+
+    .status-preview.Present {
+      background: rgba(13, 148, 136, 0.1);
+      color: #0d9488;
+    }
+
+    .status-preview.NFOH {
+      background: rgba(217, 119, 6, 0.1);
+      color: #d97706;
+    }
+
+    .status-preview.Absent {
+      background: rgba(156, 163, 175, 0.1);
+      color: #6b7280;
+    }
+
+    .status-preview mat-icon { font-size: 20px; width: 20px; height: 20px; }
 
     .actions { display: flex; gap: 12px; justify-content: flex-end; }
 
@@ -135,11 +170,6 @@ import { NotificationService } from '../../../core/services/notification.service
     .save-btn:hover { filter: brightness(0.9); }
     .save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .save-btn mat-icon { font-size: 18px; width: 18px; height: 18px; }
-
-    .loading-state {
-      text-align: center; padding: 60px 20px; color: var(--pwl-text-secondary);
-    }
-    .loading-state mat-icon { font-size: 40px; width: 40px; height: 40px; color: var(--pwl-primary); margin-bottom: 12px; }
   `]
 })
 export class AttendanceEditPageComponent implements OnInit {
@@ -151,43 +181,46 @@ export class AttendanceEditPageComponent implements OnInit {
 
   attendance = signal<Attendance | null>(null);
   saving = signal(false);
+  isNewRecord = signal(false);
 
   form: FormGroup = this.fb.group({
-    firstPunchIn: ['', Validators.required],
+    firstPunchIn: ['09:00', Validators.required],
     lastPunchOut: ['']
   });
 
   calculatedWorkingHours = signal('--:--');
-
-  private attendanceId!: number;
+  status = signal('Absent');
+  private dateStr: string = '';
 
   async ngOnInit(): Promise<void> {
-    const idParam = this.route.snapshot.paramMap.get('id');
-    if (!idParam) {
-      this.notify.error('Invalid attendance ID');
+    this.dateStr = this.route.snapshot.paramMap.get('date') || '';
+    if (!this.dateStr) {
+      this.notify.error('Invalid date');
       this.router.navigate(['/attendance']);
       return;
     }
-    this.attendanceId = +idParam;
     await this.loadAttendance();
   }
 
   async loadAttendance(): Promise<void> {
     try {
-      const record = await this.attendanceService.getAttendanceById(this.attendanceId);
-      if (!record) {
-        this.notify.error('Attendance record not found');
-        this.router.navigate(['/attendance']);
-        return;
+      const record = await this.attendanceService.getAttendanceByDate(this.dateStr);
+      if (record) {
+        this.attendance.set(record);
+        this.isNewRecord.set(false);
+        this.form.patchValue({
+          firstPunchIn: record.firstPunchIn,
+          lastPunchOut: record.lastPunchOut || ''
+        });
+      } else {
+        this.isNewRecord.set(true);
+        this.form.patchValue({
+          firstPunchIn: '09:00',
+          lastPunchOut: ''
+        });
       }
-      this.attendance.set(record);
-      this.form.patchValue({
-        firstPunchIn: record.firstPunchIn,
-        lastPunchOut: record.lastPunchOut || ''
-      });
-      this.updateWorkingHours();
-
-      this.form.valueChanges.subscribe(() => this.updateWorkingHours());
+      this.updateCalculations();
+      this.form.valueChanges.subscribe(() => this.updateCalculations());
     } catch (error: any) {
       this.notify.error(error.message || 'Failed to load attendance');
       this.router.navigate(['/attendance']);
@@ -195,13 +228,12 @@ export class AttendanceEditPageComponent implements OnInit {
   }
 
   formatDate(): string {
-    const record = this.attendance();
-    if (!record) return '';
-    const d = new Date(record.date);
+    if (!this.dateStr) return '';
+    const d = new Date(this.dateStr);
     return d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   }
 
-  updateWorkingHours(): void {
+  updateCalculations(): void {
     const inTime = this.form.get('firstPunchIn')?.value;
     const outTime = this.form.get('lastPunchOut')?.value;
 
@@ -213,12 +245,35 @@ export class AttendanceEditPageComponent implements OnInit {
         const h = Math.floor(diffMinutes / 60);
         const m = diffMinutes % 60;
         this.calculatedWorkingHours.set(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+        if (diffMinutes >= 420) {
+          this.status.set('Present');
+        } else {
+          this.status.set('NFOH');
+        }
       } else {
         this.calculatedWorkingHours.set('Invalid');
+        this.status.set('NFOH');
       }
     } else {
       this.calculatedWorkingHours.set('--:--');
+      this.status.set('Absent');
     }
+  }
+
+  getStatus(): string {
+    return this.status();
+  }
+
+  getStatusIcon(): string {
+    switch (this.status()) {
+      case 'Present': return 'check_circle';
+      case 'NFOH': return 'warning';
+      default: return 'cancel';
+    }
+  }
+
+  getStatusClass(): string {
+    return this.status();
   }
 
   async onSubmit(): Promise<void> {
@@ -239,12 +294,22 @@ export class AttendanceEditPageComponent implements OnInit {
         status = 'completed';
       }
 
-      await this.attendanceService.updateAttendance(this.attendanceId, {
-        firstPunchIn,
-        lastPunchOut: lastPunchOut || null,
-        workingMinutes,
-        status
-      });
+      if (this.attendance()) {
+        await this.attendanceService.updateAttendance(this.attendance()!.id!, {
+          firstPunchIn,
+          lastPunchOut: lastPunchOut || null,
+          workingMinutes,
+          status
+        });
+      } else {
+        await this.attendanceService.createAttendance({
+          date: this.dateStr,
+          firstPunchIn,
+          lastPunchOut: lastPunchOut || null,
+          workingMinutes,
+          status
+        });
+      }
 
       this.notify.success('Attendance updated successfully');
       this.router.navigate(['/attendance']);

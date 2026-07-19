@@ -1,6 +1,6 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { FormsModule } from '@angular/forms';
@@ -82,35 +82,36 @@ interface DayRow {
           <div class="attendance-table">
             <div class="table-header">
               <div class="th icon-col"></div>
-              <div class="th">Date</div>
-              <div class="th">Day</div>
-              <div class="th">Punch In</div>
-              <div class="th">Punch Out</div>
-              <div class="th">Working Hour</div>
-              <div class="th">Status</div>
-              <div class="th"></div>
+              <div class="th date-col">Date</div>
+              <div class="th day-col">Day</div>
+              <div class="th punch-in-col">Punch In</div>
+              <div class="th punch-out-col">Punch Out</div>
+              <div class="th hours-col">Working Hour</div>
+              <div class="th status-col">Status</div>
+              <div class="th edit-col"></div>
             </div>
             @for (row of dayRows(); track row.date) {
               <div class="table-row"
                    [class.absent-row]="!row.attendance"
-                   [class.workday]="row.attendance && !row.isFriday && !row.isSaturday"
+                   [class.workday]="row.attendance && row.getStatus() === 'Present'"
+                   [class.nfoh-row]="row.attendance && row.getStatus() === 'NFOH'"
                    [class.friday]="row.isFriday"
                    [class.saturday]="row.isSaturday"
                    [class.today]="row.isToday">
                 <div class="td icon-col">
                   @if (row.attendance) {
-                    <div class="status-dot" [class]="row.attendance.status"></div>
+                    <div class="status-dot" [class]="row.getStatus()"></div>
                   } @else {
                     <div class="status-dot absent"></div>
                   }
                 </div>
-                <div class="td date-cell">
+                <div class="td date-col">
                   <span class="date-text">{{ formatDate(row.date) }}</span>
                 </div>
-                <div class="td day-cell" [class.holiday]="row.isFriday || row.isSaturday">
+                <div class="td day-col" [class.holiday]="row.isFriday || row.isSaturday">
                   {{ row.dayName }}
                 </div>
-                <div class="td punch-in-cell">
+                <div class="td punch-in-col">
                   @if (row.attendance) {
                     <mat-icon class="cell-icon punch-in-icon">login</mat-icon>
                     <span>{{ formatTime(row.attendance.firstPunchIn) }}</span>
@@ -118,7 +119,7 @@ interface DayRow {
                     <span class="no-data">--</span>
                   }
                 </div>
-                <div class="td punch-out-cell">
+                <div class="td punch-out-col">
                   @if (row.attendance?.lastPunchOut) {
                     <mat-icon class="cell-icon punch-out-icon">logout</mat-icon>
                     <span>{{ formatTime(row.attendance!.lastPunchOut!) }}</span>
@@ -126,7 +127,7 @@ interface DayRow {
                     <span class="no-data">--</span>
                   }
                 </div>
-                <div class="td hours-cell">
+                <div class="td hours-col">
                   @if (row.attendance && row.attendance.workingMinutes > 0) {
                     <span class="hours-badge" [class.friday-badge]="row.isFriday" [class.saturday-badge]="row.isSaturday">
                       {{ formatWorkingHours(row.attendance.workingMinutes) }}
@@ -135,21 +136,15 @@ interface DayRow {
                     <span class="no-data">--</span>
                   }
                 </div>
-                <div class="td status-cell">
-                  @if (row.attendance) {
-                    <span class="status-badge" [class]="row.attendance.status">
-                      {{ formatStatus(row.attendance.status) }}
-                    </span>
-                  } @else {
-                    <span class="status-badge absent">Absent</span>
-                  }
+                <div class="td status-col">
+                  <span class="status-badge" [class]="row.getStatus()">
+                    {{ row.getStatus() }}
+                  </span>
                 </div>
-                <div class="td actions-cell">
-                  @if (row.attendance) {
-                    <a [routerLink]="['/attendance/edit', row.attendance.id]" class="edit-link">
-                      <mat-icon class="edit-icon">edit</mat-icon>
-                    </a>
-                  }
+                <div class="td edit-col">
+                  <a [routerLink]="['/attendance/edit', row.date]" class="edit-link">
+                    <mat-icon class="edit-icon">edit</mat-icon>
+                  </a>
                 </div>
               </div>
             }
@@ -263,7 +258,8 @@ interface DayRow {
 
     .table-header {
       display: grid;
-      grid-template-columns: 40px 100px 80px 120px 120px 110px 100px 50px;
+      grid-template-columns: 40px 90px 70px 120px 120px 100px 90px 50px;
+      gap: 8px;
       padding: 10px 20px;
       border-bottom: 1px solid var(--pwl-divider);
       background: var(--pwl-surface-variant);
@@ -279,7 +275,8 @@ interface DayRow {
 
     .table-row {
       display: grid;
-      grid-template-columns: 40px 100px 80px 120px 120px 110px 100px 50px;
+      grid-template-columns: 40px 90px 70px 120px 120px 100px 90px 50px;
+      gap: 8px;
       padding: 10px 20px;
       border-bottom: 1px solid var(--pwl-divider);
       align-items: center;
@@ -291,6 +288,7 @@ interface DayRow {
 
     .table-row.today { border-left: 3px solid var(--pwl-primary); }
     .table-row.workday { background: rgba(13, 148, 136, 0.03); }
+    .table-row.nfoh-row { background: rgba(217, 119, 6, 0.03); }
     .table-row.friday { background: rgba(255, 204, 0, 0.05); }
     .table-row.saturday { background: rgba(255, 107, 107, 0.05); }
     .table-row.absent-row { background: rgba(156, 163, 175, 0.04); }
@@ -300,20 +298,21 @@ interface DayRow {
     .td { font-size: 13px; color: var(--pwl-text-primary); display: flex; align-items: center; gap: 6px; }
 
     .icon-col { justify-content: center; }
+    .edit-col { justify-content: flex-end; }
 
     .status-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
     }
-    .status-dot.working { background: #0d9488; box-shadow: 0 0 6px rgba(13, 148, 136, 0.4); }
-    .status-dot.completed { background: #16a34a; }
+    .status-dot.Present { background: #0d9488; box-shadow: 0 0 6px rgba(13, 148, 136, 0.4); }
+    .status-dot.NFOH { background: #d97706; box-shadow: 0 0 6px rgba(217, 119, 6, 0.4); }
     .status-dot.absent { background: #d1d5db; }
 
     .date-text { font-weight: 500; }
 
-    .day-cell { color: var(--pwl-text-secondary); font-size: 12px; }
-    .day-cell.holiday { font-weight: 600; }
+    .day-col { color: var(--pwl-text-secondary); font-size: 12px; }
+    .day-col.holiday { font-weight: 600; }
 
     .cell-icon { font-size: 14px; width: 14px; height: 14px; }
     .punch-in-icon { color: #0d9488; }
@@ -333,11 +332,9 @@ interface DayRow {
       display: inline-block; padding: 3px 8px; border-radius: 6px;
       font-size: 11px; font-weight: 600; text-transform: capitalize;
     }
-    .status-badge.absent { background: rgba(156, 163, 175, 0.15); color: #6b7280; }
-    .status-badge.working { background: rgba(13, 148, 136, 0.15); color: #0d9488; }
-    .status-badge.completed { background: rgba(34, 197, 94, 0.15); color: #16a34a; }
-
-    .actions-cell { justify-content: center; }
+    .status-badge.Absent { background: rgba(156, 163, 175, 0.15); color: #6b7280; }
+    .status-badge.Present { background: rgba(13, 148, 136, 0.15); color: #0d9488; }
+    .status-badge.NFOH { background: rgba(217, 119, 6, 0.15); color: #d97706; }
 
     .edit-link {
       display: flex; align-items: center; justify-content: center;
@@ -358,7 +355,8 @@ interface DayRow {
       .page-header { flex-direction: column; gap: 12px; }
       .section-header { flex-direction: column; align-items: flex-start; }
       .table-header, .table-row {
-        grid-template-columns: 32px 80px 60px 90px 90px 80px 80px 40px;
+        grid-template-columns: 32px 70px 50px 80px 80px 70px 70px 40px;
+        gap: 4px;
         padding: 8px 12px;
         font-size: 11px;
       }
@@ -369,6 +367,7 @@ interface DayRow {
 export class AttendanceDashboardPageComponent implements OnInit {
   private attendanceService = inject(AttendanceService);
   private notify = inject(NotificationService);
+  private router = inject(Router);
 
   todayAttendance = signal<Attendance | null>(null);
   attendanceMap = signal<Map<string, Attendance>>(new Map());
@@ -386,13 +385,19 @@ export class AttendanceDashboardPageComponent implements OnInit {
 
     return days.reverse().map(day => {
       const dateStr = format(day, 'yyyy-MM-dd');
+      const attendance = map.get(dateStr) || null;
       return {
         date: dateStr,
         dayName: day.toLocaleDateString('en-US', { weekday: 'short' }),
         isFriday: day.getDay() === 5,
         isSaturday: day.getDay() === 6,
-        attendance: map.get(dateStr) || null,
-        isToday: dateStr === today
+        attendance,
+        isToday: dateStr === today,
+        getStatus: (): string => {
+          if (!attendance) return 'Absent';
+          if (attendance.workingMinutes >= 420) return 'Present';
+          return 'NFOH';
+        }
       };
     });
   });
@@ -455,8 +460,8 @@ export class AttendanceDashboardPageComponent implements OnInit {
       const end = parseISO(value);
       const diffDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
 
-      if (diffDays > 30) {
-        this.notify.warning('Maximum date range is 30 days');
+      if (diffDays > 31) {
+        this.notify.warning('Maximum date range is 31 days (1 month). Please select a shorter range.');
         return;
       }
       if (diffDays < 0) {
@@ -500,9 +505,5 @@ export class AttendanceDashboardPageComponent implements OnInit {
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-  }
-
-  formatStatus(status: string): string {
-    return status.replace('_', ' ');
   }
 }

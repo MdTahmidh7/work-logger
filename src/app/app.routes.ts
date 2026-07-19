@@ -15,7 +15,7 @@ export const routes: Routes = [
   { path: 'edit/:id', component: WorkLogFormComponent },
   { path: 'attendance', component: AttendanceDashboardPageComponent },
   { path: 'attendance/history', component: AttendanceHistoryPageComponent },
-  { path: 'attendance/edit/:id', component: AttendanceEditPageComponent },
+  { path: 'attendance/edit/:date', component: AttendanceEditPageComponent },
   { path: 'settings', component: SettingsComponent },
   { path: '**', redirectTo: 'dashboard' }
 ];

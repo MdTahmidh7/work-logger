@@ -169,6 +169,21 @@ export class AttendanceService {
     await db.attendance.update(id, { ...data, updatedAt: new Date().toISOString() });
   }
 
+  async createAttendance(data: Partial<Attendance>): Promise<Attendance> {
+    const now = new Date().toISOString();
+    const attendance: Attendance = {
+      date: data.date!,
+      firstPunchIn: data.firstPunchIn!,
+      lastPunchOut: data.lastPunchOut || null,
+      workingMinutes: data.workingMinutes || 0,
+      status: data.status || 'working',
+      createdAt: now,
+      updatedAt: now
+    };
+    const id = await db.attendance.add(attendance);
+    return { ...attendance, id };
+  }
+
   private getTodayString(): string {
     return format(new Date(), 'yyyy-MM-dd');
   }
