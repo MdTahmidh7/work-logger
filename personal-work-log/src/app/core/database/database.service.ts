@@ -1,34 +1,33 @@
 import { Dexie, Table } from 'dexie';
-import { WorkLog } from '../models/work-log.model';
+import { WorkLog, BackupData } from '../models/work-log.model';
 
-export interface DatabaseConfig {
-  name: string;
-  version: number;
-}
+const DB_NAME = 'personal-work-log-db';
+const DB_VERSION = 1;
 
 export class DatabaseService extends Dexie {
   workLogs!: Table<WorkLog, number>;
 
-  constructor(config: DatabaseConfig) {
-    super(config.name);
-    this.version(config.version).stores({
-      workLogs: 'id,date'
+  constructor() {
+    super(DB_NAME);
+    this.version(DB_VERSION).stores({
+      workLogs: '++id, title, date, createdAt'
     });
   }
 
-  // CRUD Operations
   async createLog(log: Omit<WorkLog, 'id' | 'createdAt' | 'updatedAt'>): Promise<number> {
-    const timestamp = new Date().toISOString();
+    const now = new Date().toISOString();
     return this.workLogs.add({
       ...log,
-      createdAt: timestamp,
-      updatedAt: timestamp
+      createdAt: now,
+      updatedAt: now
     } as WorkLog);
   }
 
   async updateLog(id: number, updates: Partial<WorkLog>): Promise<number> {
-    const timestamp = new Date().toISOString();
-    return this.workLogs.update(id, { ...updates, updatedAt: timestamp });
+    return this.workLogs.update(id, {
+      ...updates,
+      updatedAt: new Date().toISOString()
+    });
   }
 
   async deleteLog(id: number): Promise<void> {
@@ -39,7 +38,6 @@ export class DatabaseService extends Dexie {
     return this.workLogs.get(id);
   }
 
-  // Query Operations
   async getAllLogs(): Promise<WorkLog[]> {
     return this.workLogs.toArray();
   }
@@ -60,45 +58,37 @@ export class DatabaseService extends Dexie {
     return this.workLogs
       .filter(log =>
         log.title.toLowerCase().includes(lowerQuery) ||
-        (log.details && log.details.toLowerCase().includes(lowerQuery))
+        !!(log.details && log.details.toLowerCase().includes(lowerQuery))
       )
       .toArray();
   }
 
-  async getLogsWithDateGroups(): Promise<{ [date: string]: WorkLog[] }> {
-    const logs = await this.getAllLogs();
-    return logs.reduce((groups, log) => {
-      if (!groups[log.date]) {
-        groups[log.date] = [];
-      }
-      groups[log.date].push(log);
-      return groups;
-    }, {} as { [date: string]: WorkLog[] });
-  }
-
-  // Backup & Restore
-  async exportLogs(): Promise<{ version: string; exportedAt: string; data: { workLogs: WorkLog[] } }> {
+  async exportLogs(): Promise<BackupData> {
     const workLogs = await this.getAllLogs();
     return {
       version: '1.0',
       exportedAt: new Date().toISOString(),
+      app: 'Personal Work Logger',
       data: { workLogs }
     };
   }
 
-  async importLogs(data: { version: string; exportedAt: string; data: { workLogs: WorkLog[] } }): Promise<number> {
-    const added = await Promise.all(
-      data.data.workLogs.map(log => this.createLog(log))
-    );
-    return added.length;
+  async importLogs(data: BackupData): Promise<number> {
+    await this.workLogs.clear();
+    let count = 0;
+    for (const log of data.data.workLogs) {
+      const { id, ...rest } = log;
+      await this.workLogs.add(rest as WorkLog);
+      count++;
+    }
+    return count;
   }
 
-  // Utility
   async clearAll(): Promise<void> {
     await this.workLogs.clear();
   }
 
-  async getStats(): Promise<{
+  async getStats(startDate?: string, endDate?: string): Promise<{
     totalTasks: number;
     totalHours: number;
     averageHoursPerDay: number;
@@ -106,7 +96,13 @@ export class DatabaseService extends Dexie {
     longestWorkingDay: { date: string; hours: number };
     mostProductiveDay: { date: string; tasks: number };
   }> {
-    const logs = await this.getAllLogs();
+    let logs: WorkLog[];
+    if (startDate && endDate) {
+      logs = await this.getLogsByRange(startDate, endDate);
+    } else {
+      logs = await this.getAllLogs();
+    }
+
     if (logs.length === 0) {
       return {
         totalTasks: 0,
@@ -118,22 +114,26 @@ export class DatabaseService extends Dexie {
       };
     }
 
-    const dailyTotals = logs.reduce((days, log) => {
-      if (!days[log.date]) {
-        days[log.date] = { hours: 0, tasks: 0 };
-      }
-      days[log.date].hours += log.durationMinutes / 60;
-      days[log.date].tasks += 1;
-      return days;
-    }, {} as { [date: string]: { hours: number; tasks: number } });
-
     const totalTasks = logs.length;
     const totalHours = logs.reduce((sum, log) => sum + log.durationMinutes / 60, 0);
-    const averageHoursPerDay = totalHours / Object.keys(dailyTotals).length || 0;
+    const uniqueDays = new Set(logs.map(log => log.date));
+    const averageHoursPerDay = totalHours / uniqueDays.size;
     const averageTaskDuration = logs.reduce((sum, log) => sum + log.durationMinutes, 0) / totalTasks;
 
-    const longestDay = Object.entries(dailyTotals).sort((a, b) => b[1].hours - a[1].hours)[0];
-    const mostProductiveDay = Object.entries(dailyTotals).sort((a, b) => b[1].tasks - a[1].tasks)[0];
+    const dailyTotals: { [key: string]: { hours: number; tasks: number } } = {};
+    for (const log of logs) {
+      if (!dailyTotals[log.date]) {
+        dailyTotals[log.date] = { hours: 0, tasks: 0 };
+      }
+      dailyTotals[log.date].hours += log.durationMinutes / 60;
+      dailyTotals[log.date].tasks += 1;
+    }
+
+    const longestDay = Object.entries(dailyTotals)
+      .sort((a, b) => b[1].hours - a[1].hours)[0];
+
+    const mostProductiveDay = Object.entries(dailyTotals)
+      .sort((a, b) => b[1].tasks - a[1].tasks)[0];
 
     return {
       totalTasks,
@@ -146,9 +146,4 @@ export class DatabaseService extends Dexie {
   }
 }
 
-export const dbConfig: DatabaseConfig = {
-  name: 'personal-work-log',
-  version: 1
-};
-
-export const db = new DatabaseService(dbConfig);
+export const db = new DatabaseService();

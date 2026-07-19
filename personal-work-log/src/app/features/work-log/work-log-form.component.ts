@@ -1,242 +1,381 @@
-import { Component } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { MatOptionModule } from '@angular/material/core';
-import { MatButtonModule } from '@angular/material/button';
+import { Router, ActivatedRoute, RouterModule } from '@angular/router';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
-import { MatRadioModule } from '@angular/material/radio';
-import { MatSliderModule } from '@angular/material/slider';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { MatDividerModule } from '@angular/material/divider';
-import { ToastrService } from 'ngx-toastr';
-import { WorkLog } from '../core/models/work-log.model';
-import { DatabaseService } from '../core/database/database.service';
-
-interface DurationOption {
-  label: string;
-  hours: number;
-  minutes: number;
-  value: number;
-}
+import { db } from '../../core/database/database.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
   standalone: true,
   selector: 'app-work-log-form',
   imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatOptionModule,
-    MatButtonModule,
-    MatIconModule,
-    MatDatepickerModule,
-    MatNativeDateModule,
-    MatRadioModule,
-    MatSliderModule,
-    MatExpansionModule,
-    MatDividerModule
+    CommonModule, RouterModule, ReactiveFormsModule,
+    MatIconModule, MatButtonModule, MatInputModule, MatFormFieldModule,
+    MatDatepickerModule
   ],
-  templateUrl: './work-log-form.html',
-  styleUrls: ['./work-log-form.scss']
+  template: `
+    <div class="form-page">
+      <div class="form-header">
+        <a routerLink="/dashboard" class="back-link">
+          <mat-icon>arrow_back</mat-icon> Dashboard
+        </a>
+        <h1>{{ isEditMode() ? 'Edit Work Log' : 'Add Work Log' }}</h1>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="work-log-form">
+        <mat-form-field appearance="outline">
+          <mat-label>Title</mat-label>
+          <input matInput formControlName="title" placeholder="What did you work on?">
+          @if (form.get('title')?.hasError('required') && form.get('title')?.touched) {
+            <mat-error>Title is required</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Details</mat-label>
+          <textarea matInput formControlName="details" rows="3"
+                    placeholder="Optional details about your work"></textarea>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Date</mat-label>
+          <input matInput [matDatepicker]="picker" formControlName="date" [max]="maxDate">
+          <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+          @if (form.get('date')?.hasError('matDatepickerMax')) {
+            <mat-error>Cannot select future dates</mat-error>
+          }
+        </mat-form-field>
+
+        <div class="duration-section">
+          <label class="duration-label">Duration</label>
+          <div class="duration-inputs">
+            <div class="duration-field">
+              <input type="number" formControlName="hours" min="0" max="24" class="duration-input">
+              <span class="duration-unit">hours</span>
+            </div>
+            <div class="duration-field">
+              <input type="number" formControlName="minutes" min="0" max="59" step="5" class="duration-input">
+              <span class="duration-unit">min</span>
+            </div>
+          </div>
+          @if (durationError()) {
+            <div class="error-msg">{{ durationError() }}</div>
+          }
+        </div>
+
+        <div class="quick-durations">
+          @for (preset of quickPresets; track preset) {
+            <button type="button" class="preset-btn" (click)="setDuration(preset)">{{ preset }}m</button>
+          }
+        </div>
+
+        <div class="duration-display">
+          <mat-icon>schedule</mat-icon>
+          <span>Total: <strong>{{ getTotalMinutes() }} min</strong> ({{ getHours() }}h {{ getMins() }}m)</span>
+        </div>
+
+        <div class="form-actions">
+          <a routerLink="/dashboard" class="cancel-btn">Cancel</a>
+          <button type="submit" mat-raised-button color="primary" class="submit-btn" [disabled]="form.invalid">
+            <mat-icon>{{ isEditMode() ? 'save' : 'add' }}</mat-icon>
+            {{ isEditMode() ? 'Update Log' : 'Add Log' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  `,
+  styles: [`
+    .form-page {
+      max-width: 640px;
+      margin: 0 auto;
+      padding-top: 100px;
+      padding-left: 20px;
+      padding-right: 20px;
+    }
+
+    .form-header {
+      margin-bottom: 32px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--pwl-text-secondary);
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+      margin-bottom: 12px;
+      transition: color 0.2s;
+    }
+
+    .back-link:hover {
+      color: var(--pwl-primary);
+    }
+
+    .back-link mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+
+    .form-header h1 {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .work-log-form {
+      background: var(--pwl-surface);
+      border-radius: 16px;
+      padding: 32px;
+      border: 1px solid var(--pwl-divider);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .work-log-form mat-form-field {
+      width: 100%;
+    }
+
+    .duration-section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .duration-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--pwl-text-primary);
+    }
+
+    .duration-inputs {
+      display: flex;
+      gap: 16px;
+    }
+
+    .duration-field {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .duration-input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid var(--pwl-divider);
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      background: var(--pwl-surface);
+      color: var(--pwl-text-primary);
+      font-family: 'Inter', sans-serif;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .duration-input:focus {
+      outline: none;
+      border-color: var(--pwl-primary);
+      box-shadow: 0 0 0 3px rgba(103, 80, 164, 0.1);
+    }
+
+    .duration-unit {
+      color: var(--pwl-text-secondary);
+      font-size: 14px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .error-msg {
+      color: var(--pwl-danger);
+      font-size: 13px;
+    }
+
+    .quick-durations {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    .preset-btn {
+      padding: 8px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--pwl-divider);
+      background: var(--pwl-surface);
+      color: var(--pwl-text-secondary);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .preset-btn:hover {
+      border-color: var(--pwl-primary);
+      color: var(--pwl-primary);
+      background: var(--pwl-primary-light);
+    }
+
+    .duration-display {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 18px;
+      background: var(--pwl-primary-light);
+      border-radius: 12px;
+      color: var(--pwl-primary);
+      font-size: 14px;
+      font-weight: 500;
+      margin-top: 4px;
+    }
+
+    .duration-display mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 16px;
+      padding-top: 20px;
+      border-top: 1px solid var(--pwl-divider);
+    }
+
+    .cancel-btn {
+      padding: 10px 24px;
+      border-radius: 12px;
+      border: 1px solid var(--pwl-divider);
+      background: transparent;
+      color: var(--pwl-text-secondary);
+      font-weight: 600;
+      font-size: 14px;
+      text-decoration: none;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .cancel-btn:hover {
+      background: var(--pwl-surface-variant);
+    }
+
+    .submit-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+  `]
 })
 export class WorkLogFormComponent implements OnInit {
-  form: FormGroup;
-  workLog: WorkLog | null = null;
-  isEditing = false;
-  isSubmitting = false;
-  showDetails = false;
+  private fb = inject(FormBuilder);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private notify = inject(NotificationService);
 
-  readonly durationOptions: DurationOption[] = [
-    { label: 'Short (1-15 min)', hours: 0, minutes: 1, value: 1 },
-    { label: 'Quick (15-30 min)', hours: 0, minutes: 15, value: 15 },
-    { label: 'Half hour', hours: 0, minutes: 30, value: 30 },
-    { label: '1 hour', hours: 1, minutes: 0, value: 60 },
-    { label: '2 hours', hours: 2, minutes: 0, value: 120 },
-    { label: '4 hours', hours: 4, minutes: 0, value: 240 },
-    { label: '8 hours', hours: 8, minutes: 0, value: 480 },
-    { label: 'Full day (24h)', hours: 24, minutes: 0, value: 1440 }
-  ];
+  isEditMode = signal(false);
+  logId = signal<number>(0);
+  durationError = signal('');
+  maxDate = new Date();
 
-  get hoursControl() {
-    return this.form.get('hours');
+  quickPresets = [15, 30, 45, 60, 90, 120];
+
+  form: FormGroup = this.fb.group({
+    title: ['', Validators.required],
+    details: [''],
+    date: [new Date(), Validators.required],
+    hours: [0, [Validators.min(0), Validators.max(24)]],
+    minutes: [30, [Validators.min(0), Validators.max(59)]]
+  });
+
+  ngOnInit(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.isEditMode.set(true);
+      this.logId.set(+id);
+      this.loadLog(+id);
+    }
   }
 
-  get minutesControl() {
-    return this.form.get('minutes');
+  async loadLog(id: number): Promise<void> {
+    const log = await db.getLog(id);
+    if (log) {
+      const hours = Math.floor(log.durationMinutes / 60);
+      const minutes = log.durationMinutes % 60;
+      this.form.patchValue({
+        title: log.title,
+        details: log.details,
+        date: new Date(log.date),
+        hours,
+        minutes
+      });
+    }
   }
 
-  get durationMinutes() {
-    return (this.hoursControl?.value || 0) * 60 + (this.minutesControl?.value || 0);
-  }
-
-  constructor(
-    private fb: FormBuilder,
-    private databaseService: DatabaseService,
-    private toastr: ToastrService
-  ) {
-    this.form = this.fb.group({
-      title: ['', [Validators.required, Validators.maxLength(100)]],
-      details: [''],
-      hours: [0, [Validators.min(0), Validators.max(24)]],
-      minutes: [0, [Validators.min(0), Validators.max(59)]],
-      date: [new Date().toISOString().split('T')[0], Validators.required],
-      category: ['General'],
-      tags: [[] as string[]]
+  setDuration(minutes: number): void {
+    this.form.patchValue({
+      hours: Math.floor(minutes / 60),
+      minutes: minutes % 60
     });
   }
 
-  ngOnInit(): void {
-    // Initialize with default values
-    this.onDurationChange();
+  getTotalMinutes(): number {
+    const h = this.form.get('hours')?.value || 0;
+    const m = this.form.get('minutes')?.value || 0;
+    return h * 60 + m;
   }
 
-  onDurationChange(): void {
-    const duration = this.durationMinutes;
-    if (this.isValidDuration(duration)) {
-      this.form.patchValue({ durationMinutes: duration }, { emitEvent: false });
-    }
+  getHours(): number {
+    return Math.floor(this.getTotalMinutes() / 60);
   }
 
-  isValidDuration(duration: number): boolean {
-    return duration >= 1 && duration <= 1440;
-  }
-
-  setQuickDuration(option: DurationOption): void {
-    this.form.patchValue({ hours: option.hours, minutes: option.minutes });
-  }
-
-  getDurationText(): string {
-    const hours = this.hoursControl?.value || 0;
-    const minutes = this.minutesControl?.value || 0;
-
-    if (hours === 0) {
-      return minutes === 1 ? '1 minute' : `${minutes} minutes`;
-    } else if (minutes === 0) {
-      return hours === 1 ? '1 hour' : `${hours} hours`;
-    } else {
-      return hours === 1 ? `1 hour ${minutes} minutes` : `${hours} hours ${minutes} minutes`;
-    }
+  getMins(): number {
+    return this.getTotalMinutes() % 60;
   }
 
   async onSubmit(): Promise<void> {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      this.toastr.error('Please fill in all required fields correctly', 'Validation Error');
+    if (this.form.invalid) return;
+
+    const total = this.getTotalMinutes();
+    if (total <= 0) {
+      this.durationError.set('Duration must be greater than 0');
       return;
     }
 
-    if (!this.isValidDuration(this.durationMinutes)) {
-      this.toastr.error('Duration must be between 1 minute and 24 hours', 'Validation Error');
-      return;
-    }
-
-    this.isSubmitting = true;
+    this.durationError.set('');
+    const { title, details, date } = this.form.value;
+    const dateStr = date instanceof Date
+      ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+      : date;
 
     try {
-      const workLog: WorkLog = {
-        title: this.form.value.title,
-        details: this.form.value.details,
-        durationMinutes: this.durationMinutes,
-        date: this.form.value.date,
-        createdAt: this.isEditing ? this.workLog?.createdAt : new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-
-      if (this.isEditing && this.workLog?.id) {
-        await this.databaseService.updateLog(this.workLog.id, workLog);
-        this.toastr.success('Work log updated successfully!', 'Success');
-      } else {
-        await this.databaseService.createLog(workLog);
-        this.toastr.success('Work log saved successfully!', 'Success');
-      }
-
-      this.resetForm();
-    } catch (error) {
-      console.error('Error saving work log:', error);
-      this.toastr.error('Failed to save work log. Please try again.', 'Error');
-    } finally {
-      this.isSubmitting = false;
-    }
-  }
-
-  resetForm(): void {
-    this.form.reset({
-      title: '',
-      details: '',
-      hours: 0,
-      minutes: 0,
-      date: new Date().toISOString().split('T')[0],
-      category: 'General',
-      tags: []
-    });
-    this.isEditing = false;
-    this.workLog = null;
-    this.showDetails = false;
-  }
-
-  editWorkLog(log: WorkLog): void {
-    this.workLog = log;
-    this.isEditing = true;
-
-    const hours = Math.floor(log.durationMinutes / 60);
-    const minutes = log.durationMinutes % 60;
-
-    this.form.patchValue({
-      title: log.title,
-      details: log.details || '',
-      hours: hours,
-      minutes: minutes,
-      date: log.date,
-      category: 'General',
-      tags: []
-    });
-
-    this.showDetails = true;
-  }
-
-  deleteWorkLog(id: number): void {
-    if (confirm('Are you sure you want to delete this work log? This action cannot be undone.')) {
-      this.databaseService.deleteLog(id)
-        .then(() => {
-          this.toastr.info('Work log deleted', 'Info');
-        })
-        .catch(error => {
-          console.error('Error deleting work log:', error);
-          this.toastr.error('Failed to delete work log', 'Error');
+      if (this.isEditMode()) {
+        await db.updateLog(this.logId(), {
+          title, details, date: dateStr, durationMinutes: total
         });
+        this.notify.success('Work log updated successfully');
+      } else {
+        await db.createLog({
+          title, details, date: dateStr, durationMinutes: total
+        });
+        this.notify.success('Work log added successfully');
+      }
+      this.router.navigate(['/dashboard']);
+    } catch {
+      this.notify.error('Failed to save work log');
     }
-  }
-
-  getTimeAgo(dateString: string): string {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-    if (diffInSeconds < 60) {
-      return 'just now';
-    } else if (diffInSeconds < 3600) {
-      const minutes = Math.floor(diffInSeconds / 60);
-      return minutes === 1 ? '1 minute ago' : `${minutes} minutes ago`;
-    } else if (diffInSeconds < 86400) {
-      const hours = Math.floor(diffInSeconds / 3600);
-      return hours === 1 ? '1 hour ago' : `${hours} hours ago`;
-    } else {
-      const days = Math.floor(diffInSeconds / 86400);
-      return days === 1 ? '1 day ago' : `${days} days ago`;
-    }
-  }
-
-  hasError(controlName: string, errorName: string): boolean {
-    const control = this.form.get(controlName);
-    return !!(control?.dirty && control?.hasError(errorName));
   }
 }

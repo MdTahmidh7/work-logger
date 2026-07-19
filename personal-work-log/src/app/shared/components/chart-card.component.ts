@@ -1,106 +1,160 @@
-import { Component, input, OnDestroy, AfterViewChecked } from '@angular/core';
+import { Component, input, effect, ElementRef, viewChild, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Chart } from 'chart.js/auto';
-import { MatCardModule } from '@angular/material/card';
-import { MatIconModule } from '@angular/material/icon';
+import { Chart, registerables } from 'chart.js';
 
-interface ChartCardData {
-  title: string;
-  subtitle: string;
-  type: 'line' | 'bar';
-  data: {
-    labels: string[];
-    values: number[];
-  };
-}
+Chart.register(...registerables);
 
 @Component({
   standalone: true,
   selector: 'app-chart-card',
-  imports: [CommonModule, MatCardModule, MatIconModule],
-  templateUrl: './chart-card.html',
-  styleUrls: ['./chart-card.scss']
+  imports: [CommonModule],
+  template: `
+    <div class="chart-card" [style.background]="cardBg()">
+      <div class="chart-header">
+        <h3>{{ title() }}</h3>
+      </div>
+      <div class="chart-container">
+        <canvas #canvas></canvas>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .chart-card {
+      border-radius: 14px;
+      padding: 16px 20px;
+      border: 1px solid var(--pwl-divider);
+    }
+
+    .chart-header {
+      margin-bottom: 12px;
+    }
+
+    .chart-header h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--pwl-text-primary);
+    }
+
+    .chart-container {
+      position: relative;
+      height: 180px;
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+  `]
 })
-export class ChartCardComponent implements AfterViewChecked, OnDestroy {
-  data = input<ChartCardData>({
-    title: 'Chart',
-    subtitle: 'Subtitle',
-    type: 'line',
-    data: {
-      labels: [],
-      values: []
-    }
-  });
+export class ChartCardComponent implements OnDestroy {
+  title = input.required<string>();
+  type = input<'line' | 'bar' | 'doughnut'>('line');
+  labels = input.required<string[]>();
+  datasets = input.required<{ label: string; data: number[]; color: string }[]>();
+  chartColor = input<string>('#6750a4');
+  cardBg = input<string>('var(--pwl-surface)');
 
-  chart: any;
+  canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
 
-  ngAfterViewChecked(): void {
-    this.renderChart();
-  }
+  private chart: Chart | null = null;
 
-  ngOnDestroy(): void {
-    if (this.chart) {
-      this.chart.destroy();
-    }
+  constructor() {
+    effect(() => {
+      this.labels();
+      this.datasets();
+      this.chartColor();
+      setTimeout(() => this.renderChart(), 0);
+    });
   }
 
   private renderChart(): void {
-    const canvasId = `chart-${this.data().title.toLowerCase().replace(/\s+/g, '-')}`;
-    const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
     if (this.chart) {
       this.chart.destroy();
     }
 
-    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+    const el = this.canvas();
+    if (!el) return;
 
-    this.chart = new Chart(ctx, {
-      type: this.data().type,
-      data: {
-        labels: this.data().data.labels,
-        datasets: [{
-          label: this.data().title,
-          data: this.data().data.values,
-          borderColor: isDarkMode ? '#4CAF50' : '#2E7D32',
-          backgroundColor: isDarkMode ? 'rgba(76, 175, 80, 0.2)' : 'rgba(46, 125, 50, 0.1)',
+    const ctx = el.nativeElement.getContext('2d');
+    if (!ctx) return;
+
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const color = this.chartColor();
+
+    const chartDatasets = this.datasets().map(ds => {
+      const dsColor = ds.color || color;
+      if (this.type() === 'line') {
+        return {
+          label: ds.label,
+          data: ds.data,
+          borderColor: dsColor,
+          backgroundColor: dsColor + '20',
+          borderWidth: 2.5,
+          fill: true,
           tension: 0.4,
           pointRadius: 4,
-          pointHoverRadius: 6
-        }]
+          pointHoverRadius: 6,
+          pointBackgroundColor: dsColor,
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2
+        };
+      } else {
+        return {
+          label: ds.label,
+          data: ds.data,
+          backgroundColor: dsColor + 'CC',
+          borderColor: dsColor,
+          borderWidth: 1,
+          borderRadius: 6
+        };
+      }
+    });
+
+    this.chart = new Chart(ctx, {
+      type: this.type(),
+      data: {
+        labels: this.labels(),
+        datasets: chartDatasets
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: {
-            display: false
-          },
-          title: {
-            display: false
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: isDark ? '#2c2c2e' : '#ffffff',
+            titleColor: isDark ? '#f5f5f7' : '#1d1d1f',
+            bodyColor: isDark ? '#a1a1a6' : '#6e6e73',
+            borderColor: isDark ? '#38383a' : '#e5e5ea',
+            borderWidth: 1,
+            cornerRadius: 10,
+            padding: 12,
+            titleFont: { family: 'Inter', weight: 'bold' as const },
+            bodyFont: { family: 'Inter' }
           }
         },
-        scales: {
-          y: {
-            beginAtZero: true,
-            grid: {
-              color: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+        scales: this.type() === 'doughnut' ? {} : {
+          x: {
+            grid: { display: false },
+            ticks: {
+              color: isDark ? '#a1a1a6' : '#6e6e73',
+              font: { family: 'Inter', size: 11 }
             }
           },
-          x: {
-            grid: {
-              display: false
-            }
+          y: {
+            grid: { color: isDark ? '#2c2c2e' : '#f0f0f2' },
+            ticks: {
+              color: isDark ? '#a1a1a6' : '#6e6e73',
+              font: { family: 'Inter', size: 11 }
+            },
+            beginAtZero: true
           }
         }
       }
     });
   }
 
-  getChartIcon(type: string): string {
-    return type === 'line' ? 'trending_up' : 'show_chart';
+  ngOnDestroy(): void {
+    this.chart?.destroy();
   }
 }
