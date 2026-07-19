@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, input, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { Attendance } from '../models/attendance.model';
@@ -76,19 +76,24 @@ import { Attendance } from '../models/attendance.model';
       font-weight: 600;
     }
 
-    .status-badge.not_started {
+    .status-badge.Absent {
       background: rgba(156, 163, 175, 0.15);
       color: #6b7280;
     }
 
-    .status-badge.working {
+    .status-badge.Working {
       background: rgba(13, 148, 136, 0.15);
       color: #0d9488;
     }
 
-    .status-badge.completed {
-      background: rgba(34, 197, 94, 0.15);
-      color: #16a34a;
+    .status-badge.Present {
+      background: rgba(13, 148, 136, 0.15);
+      color: #0d9488;
+    }
+
+    .status-badge.NFOH {
+      background: rgba(217, 119, 6, 0.15);
+      color: #d97706;
     }
 
     .card-body {
@@ -127,24 +132,29 @@ import { Attendance } from '../models/attendance.model';
 export class TodayAttendanceCardComponent {
   attendance = input<Attendance | null>(null);
 
-  statusClass = (): string => {
-    if (!this.attendance()) return 'not_started';
-    return this.attendance()!.status;
-  };
+  statusClass = computed(() => {
+    const att = this.attendance();
+    if (!att) return 'Absent';
+    if (att.workingMinutes >= 420) return 'Present';
+    return 'NFOH';
+  });
 
-  statusLabel = (): string => {
-    if (!this.attendance()) return 'Not Started';
-    if (this.attendance()!.status === 'working') return 'Working';
-    return 'Completed';
-  };
+  statusLabel = computed(() => {
+    const att = this.attendance();
+    if (!att) return 'Not Started';
+    if (att.status === 'working') return 'Working';
+    if (att.workingMinutes >= 420) return 'Present';
+    return 'NFOH';
+  });
 
-  workingHours = (): string => {
-    if (!this.attendance()) return '00h 00m';
-    const minutes = this.attendance()!.workingMinutes;
+  workingHours = computed(() => {
+    const att = this.attendance();
+    if (!att) return '00:00';
+    const minutes = att.workingMinutes;
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
-    return `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`;
-  };
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  });
 
   formatTime(time: string): string {
     const [h, m] = time.split(':').map(Number);

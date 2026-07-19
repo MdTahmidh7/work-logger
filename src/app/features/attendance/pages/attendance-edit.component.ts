@@ -4,8 +4,6 @@ import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { AttendanceService } from '../services/attendance.service';
 import { Attendance } from '../models/attendance.model';
 import { NotificationService } from '../../../core/services/notification.service';
@@ -13,8 +11,7 @@ import { NotificationService } from '../../../core/services/notification.service
 @Component({
   standalone: true,
   selector: 'app-attendance-edit',
-  imports: [CommonModule, RouterModule, ReactiveFormsModule, MatIconModule, MatButtonModule,
-            MatFormFieldModule, MatInputModule],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, MatIconModule, MatButtonModule],
   template: `
     <div class="edit-wrapper">
       <div class="edit-container">
@@ -32,20 +29,18 @@ import { NotificationService } from '../../../core/services/notification.service
           <form [formGroup]="form" (ngSubmit)="onSubmit()">
             <div class="time-group">
               <label class="field-label">Punch In</label>
-              <mat-form-field appearance="outline" class="time-field">
-                <mat-icon matPrefix class="field-icon punch-in-icon">login</mat-icon>
-                <mat-label>Time</mat-label>
-                <input matInput type="time" formControlName="firstPunchIn">
-              </mat-form-field>
+              <div class="time-input-wrapper">
+                <mat-icon class="field-icon punch-in-icon">login</mat-icon>
+                <input type="time" formControlName="firstPunchIn" class="native-time-input">
+              </div>
             </div>
 
             <div class="time-group">
               <label class="field-label">Punch Out</label>
-              <mat-form-field appearance="outline" class="time-field">
-                <mat-icon matPrefix class="field-icon punch-out-icon">logout</mat-icon>
-                <mat-label>Time</mat-label>
-                <input matInput type="time" formControlName="lastPunchOut">
-              </mat-form-field>
+              <div class="time-input-wrapper">
+                <mat-icon class="field-icon punch-out-icon">logout</mat-icon>
+                <input type="time" formControlName="lastPunchOut" class="native-time-input">
+              </div>
             </div>
 
             <div class="working-hour-preview">
@@ -53,14 +48,14 @@ import { NotificationService } from '../../../core/services/notification.service
               <span>Working Hour: <strong>{{ calculatedWorkingHours() }}</strong></span>
             </div>
 
-            <div class="status-preview">
-              <mat-icon [class]="getStatusClass()">{{ getStatusIcon() }}</mat-icon>
-              <span>Status: <strong [class]="getStatusClass()">{{ getStatus() }}</strong></span>
+            <div class="status-preview" [class]="getStatusClass()">
+              <mat-icon>{{ getStatusIcon() }}</mat-icon>
+              <span>Status: <strong>{{ getStatus() }}</strong></span>
             </div>
 
             <div class="actions">
               <a routerLink="/attendance" class="cancel-btn">Cancel</a>
-              <button type="submit" class="save-btn" [disabled]="form.invalid || saving()">
+              <button type="submit" class="save-btn" [disabled]="saving()">
                 <mat-icon>save</mat-icon>
                 {{ saving() ? 'Saving...' : 'Save Changes' }}
               </button>
@@ -96,28 +91,51 @@ import { NotificationService } from '../../../core/services/notification.service
       padding: 28px;
     }
 
-    .time-group { margin-bottom: 20px; }
+    .time-group { margin-bottom: 24px; }
     .field-label {
       display: block; font-size: 12px; font-weight: 600; color: var(--pwl-text-secondary);
-      margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;
+      margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;
     }
 
-    .time-field { width: 100%; }
+    .time-input-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--pwl-surface-variant);
+      border-radius: 10px;
+      border: 1px solid var(--pwl-divider);
+      transition: border-color 0.2s;
+    }
 
-    .field-icon { font-size: 20px; width: 20px; height: 20px; }
+    .time-input-wrapper:focus-within {
+      border-color: var(--pwl-primary);
+    }
+
+    .field-icon { font-size: 22px; width: 22px; height: 22px; flex-shrink: 0; }
     .punch-in-icon { color: #0d9488; }
     .punch-out-icon { color: #dc2626; }
 
-    :host ::ng-deep .mat-mdc-form-field {
-      --mdc-outlined-text-field-container-shape: 10px;
+    .native-time-input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-size: 18px;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      color: var(--pwl-text-primary);
+      outline: none;
+      padding: 4px 0;
     }
 
-    :host ::ng-deep .mat-mdc-form-field .mat-mdc-text-field-wrapper {
-      background: var(--pwl-surface-variant);
+    .native-time-input::-webkit-calendar-picker-indicator {
+      cursor: pointer;
+      opacity: 0.6;
+      transition: opacity 0.2s;
     }
 
-    :host ::ng-deep .mat-mdc-form-field .mat-mdc-form-field-focus-overlay {
-      background: var(--pwl-surface-variant);
+    .native-time-input::-webkit-calendar-picker-indicator:hover {
+      opacity: 1;
     }
 
     .working-hour-preview {
@@ -181,7 +199,6 @@ export class AttendanceEditPageComponent implements OnInit {
 
   attendance = signal<Attendance | null>(null);
   saving = signal(false);
-  isNewRecord = signal(false);
 
   form: FormGroup = this.fb.group({
     firstPunchIn: ['09:00', Validators.required],
@@ -207,13 +224,11 @@ export class AttendanceEditPageComponent implements OnInit {
       const record = await this.attendanceService.getAttendanceByDate(this.dateStr);
       if (record) {
         this.attendance.set(record);
-        this.isNewRecord.set(false);
         this.form.patchValue({
           firstPunchIn: record.firstPunchIn,
           lastPunchOut: record.lastPunchOut || ''
         });
       } else {
-        this.isNewRecord.set(true);
         this.form.patchValue({
           firstPunchIn: '09:00',
           lastPunchOut: ''
