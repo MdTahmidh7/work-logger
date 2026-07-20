@@ -221,10 +221,14 @@ import { format, parseISO, eachDayOfInterval, subDays, differenceInCalendarDays 
 
     .table-row.today { border-left: 3px solid var(--pwl-primary); }
 
-    .table-row.weekend { background: rgba(255, 204, 0, 0.04); }
     .table-row.status-present { background: rgba(13, 148, 136, 0.04); }
+    .table-row.status-present:hover { background: rgba(13, 148, 136, 0.08); }
     .table-row.status-nfoh { background: rgba(217, 119, 6, 0.04); }
+    .table-row.status-nfoh:hover { background: rgba(217, 119, 6, 0.08); }
     .table-row.status-absent { background: rgba(156, 163, 175, 0.04); }
+    .table-row.status-absent:hover { background: rgba(156, 163, 175, 0.08); }
+    .table-row.weekend { background: rgba(255, 204, 0, 0.08); }
+    .table-row.weekend:hover { background: rgba(255, 204, 0, 0.14); }
 
     .td {
       font-size: 13px;

@@ -15,6 +15,7 @@ import { NotificationService } from '../../core/services/notification.service';
 import { WorkLog } from '../../core/models/work-log.model';
 import { Attendance } from '../attendance/models/attendance.model';
 import { AttendanceService } from '../attendance/services/attendance.service';
+import { getDaysInMonth, parseISO } from 'date-fns';
 
 @Component({
   standalone: true,
@@ -118,8 +119,8 @@ import { AttendanceService } from '../attendance/services/attendance.service';
           <app-chart-card title="Hours by Hour (Today)" type="bar"
                           [labels]="hourlyLabels()" [datasets]="hourlyDataset()"
                           chartColor="#6750a4" />
-          <app-chart-card title="Hours by Day (Week)" type="bar"
-                          [labels]="weeklyLabels()" [datasets]="weeklyDataset()"
+          <app-chart-card title="Hours by Day (Month)" type="bar"
+                          [labels]="monthlyLabels()" [datasets]="monthlyDataset()"
                           chartColor="#0d9488" />
         </div>
 
@@ -538,14 +539,24 @@ export class DashboardComponent implements OnInit {
     return [{ label: 'Hours', data: hourlyData.map(h => +h.toFixed(1)), color: '#6750a4' }];
   });
 
-  weeklyLabels = computed(() => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']);
+  monthlyLabels = computed(() => {
+    const range = this.dateUtils.getDateRange('thisMonth');
+    const date = parseISO(range.startDate);
+    const days = getDaysInMonth(date);
+    return Array.from({ length: days }, (_, i) => `${i + 1}`);
+  });
 
-  weeklyDataset = computed(() => {
-    const weeklyData = new Array(7).fill(0);
+  monthlyDataset = computed(() => {
+    const range = this.dateUtils.getDateRange('thisMonth');
+    const days = getDaysInMonth(parseISO(range.startDate));
+    const dailyData = new Array(days).fill(0);
     for (const log of this.logs()) {
-      weeklyData[new Date(log.date).getDay()] += log.durationMinutes / 60;
+      const day = parseISO(log.date).getDate();
+      if (day >= 1 && day <= days) {
+        dailyData[day - 1] += log.durationMinutes / 60;
+      }
     }
-    return [{ label: 'Hours', data: weeklyData.map(h => +h.toFixed(1)), color: '#0d9488' }];
+    return [{ label: 'Hours', data: dailyData.map(h => +h.toFixed(1)), color: '#0d9488' }];
   });
 
   groupedLogs = computed(() => {

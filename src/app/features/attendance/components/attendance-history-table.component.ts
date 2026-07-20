@@ -87,8 +87,11 @@ import { Attendance } from '../models/attendance.model';
     .table-row:hover { filter: brightness(0.97); }
 
     .table-row.workday { background: rgba(13, 148, 136, 0.04); }
-    .table-row.friday { background: rgba(255, 204, 0, 0.06); }
-    .table-row.saturday { background: rgba(255, 107, 107, 0.06); }
+    .table-row.workday:hover { background: rgba(13, 148, 136, 0.08); }
+    .table-row.friday { background: rgba(255, 204, 0, 0.12); }
+    .table-row.friday:hover { background: rgba(255, 204, 0, 0.18); }
+    .table-row.saturday { background: rgba(255, 107, 107, 0.12); }
+    .table-row.saturday:hover { background: rgba(255, 107, 107, 0.18); }
 
     .td { font-size: 13px; color: var(--pwl-text-primary); }
 

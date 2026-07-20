@@ -108,6 +108,8 @@ import {
                   row.attendance && row.getStatus() === 'NFOH'
                 "
                 [class.status-absent]="!row.attendance"
+                [class.friday]="row.isFriday"
+                [class.saturday]="row.isSaturday"
                 [class.today]="row.isToday"
               >
                 <div class="td col-date">
@@ -391,11 +393,32 @@ import {
       .table-row.status-present {
         background: rgba(13, 148, 136, 0.04);
       }
+      .table-row.status-present:hover {
+        background: rgba(13, 148, 136, 0.08);
+      }
       .table-row.status-nfoh {
         background: rgba(217, 119, 6, 0.04);
       }
+      .table-row.status-nfoh:hover {
+        background: rgba(217, 119, 6, 0.08);
+      }
       .table-row.status-absent {
         background: rgba(156, 163, 175, 0.03);
+      }
+      .table-row.status-absent:hover {
+        background: rgba(156, 163, 175, 0.07);
+      }
+      .table-row.friday {
+        background: rgba(255, 204, 0, 0.12);
+      }
+      .table-row.friday:hover {
+        background: rgba(255, 204, 0, 0.18);
+      }
+      .table-row.saturday {
+        background: rgba(255, 107, 107, 0.12);
+      }
+      .table-row.saturday:hover {
+        background: rgba(255, 107, 107, 0.18);
       }
 
       .td {
@@ -594,6 +617,8 @@ export class AttendanceDashboardPageComponent implements OnInit {
         attendance,
         totalLoggedMinutes,
         isToday: dateStr === today,
+        isFriday: day.getDay() === 5,
+        isSaturday: day.getDay() === 6,
         getStatus: (): string => {
           if (!attendance) return 'Absent';
           if (attendance.workingMinutes >= 420) return 'Present';
