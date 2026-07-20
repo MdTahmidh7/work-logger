@@ -32,7 +32,7 @@ import { Attendance } from '../models/attendance.model';
       </div>
       <button class="action-btn" [class.punch-in]="!attendance()" [class.punch-out]="!!attendance()"
               (click)="action.emit()">
-        <mat-icon>{{ attendance() ? 'logout' : 'login' }}</mat-icon>
+        <mat-icon>fingerprint</mat-icon>
         <span>{{ attendance() ? 'Punch Out' : 'Punch In' }}</span>
       </button>
     </div>
@@ -50,6 +50,7 @@ import { Attendance } from '../models/attendance.model';
       display: flex;
       align-items: center;
       gap: 16px;
+      justify-content: center;
     }
 
     .icon-circle {
