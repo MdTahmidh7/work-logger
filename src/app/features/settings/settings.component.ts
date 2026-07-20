@@ -183,9 +183,9 @@ import * as XLSX from 'xlsx';
   `,
   styles: [`
     .settings-wrapper {
-      max-width: 780px;
-      margin: 0 auto;
-      padding: 0 20px;
+      max-width: 60%;
+      margin: auto;
+      padding: 20px;
     }
 
     .settings { padding-top: 82px; }
