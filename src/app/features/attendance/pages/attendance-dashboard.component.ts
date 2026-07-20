@@ -240,7 +240,6 @@ import {
         border-radius: 14px;
         padding: 24px;
         transition: background 0.3s;
-        display: flex;
         align-items: stretch;
       }
 
