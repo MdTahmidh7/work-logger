@@ -7,6 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { AttendanceService } from '../services/attendance.service';
 import { Attendance } from '../models/attendance.model';
 import { NotificationService } from '../../../core/services/notification.service';
+import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 
 @Component({
   standalone: true,
@@ -21,6 +22,7 @@ export class AttendanceEditPageComponent implements OnInit {
   private fb = inject(FormBuilder);
   private attendanceService = inject(AttendanceService);
   private notify = inject(NotificationService);
+  private confirm = inject(ConfirmDialogService);
 
   attendance = signal<Attendance | null>(null);
   saving = signal(false);
@@ -118,6 +120,15 @@ export class AttendanceEditPageComponent implements OnInit {
 
   async onSubmit(): Promise<void> {
     if (this.form.invalid) return;
+
+    const confirmed = await this.confirm.confirmAction({
+      title: 'Save Attendance',
+      message: 'Are you sure you want to save these attendance changes?',
+      confirmText: 'Save',
+      confirmColor: '#6750a4',
+      icon: 'question',
+    });
+    if (!confirmed) return;
 
     this.saving.set(true);
     try {

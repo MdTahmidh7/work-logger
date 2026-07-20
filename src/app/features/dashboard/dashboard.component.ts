@@ -11,6 +11,7 @@ import { TodayAttendanceCardComponent } from '../attendance/components/today-att
 import { AttendanceActionButtonComponent } from '../attendance/components/attendance-action-button.component';
 import { DateUtilsService } from '../../core/services/date-utils.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
 import { WorkLog } from '../../core/models/work-log.model';
 import { Attendance } from '../attendance/models/attendance.model';
 import { AttendanceService } from '../attendance/services/attendance.service';
@@ -32,6 +33,7 @@ export class DashboardComponent implements OnInit {
   private attendanceService = inject(AttendanceService);
   private workLogService = inject(WorkLogService);
   private notify = inject(NotificationService);
+  private confirm = inject(ConfirmDialogService);
   private readonly PAGE_SIZE = 7;
 
   logs = signal<WorkLog[]>([]);
@@ -181,6 +183,18 @@ export class DashboardComponent implements OnInit {
   }
 
   async handleAttendanceAction(): Promise<void> {
+    const isPunchOut = !!this.todayAttendance();
+    const confirmed = await this.confirm.confirmAction({
+      title: isPunchOut ? 'Punch Out' : 'Punch In',
+      message: isPunchOut
+        ? 'Are you sure you want to punch out now?'
+        : 'Are you sure you want to punch in now?',
+      confirmText: isPunchOut ? 'Punch Out' : 'Punch In',
+      confirmColor: isPunchOut ? '#dc2626' : '#0d9488',
+      icon: 'question',
+    });
+    if (!confirmed) return;
+
     try {
       if (this.todayAttendance()) {
         await this.attendanceService.updatePunchOut();

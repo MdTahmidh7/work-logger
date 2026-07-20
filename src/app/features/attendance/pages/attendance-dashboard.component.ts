@@ -8,6 +8,7 @@ import { TodayAttendanceCardComponent } from '../components/today-attendance-car
 import { AttendanceService } from '../services/attendance.service';
 import { Attendance } from '../models/attendance.model';
 import { NotificationService } from '../../../core/services/notification.service';
+import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { DateUtilsService } from '../../../core/services/date-utils.service';
 import { WorkLogService } from '../../work-log/services/work-log.service';
 import { WorkLog } from '../../../core/models/work-log.model';
@@ -39,6 +40,7 @@ export class AttendanceDashboardPageComponent implements OnInit {
   private router = inject(Router);
   private dateUtils = inject(DateUtilsService);
   private workLogService = inject(WorkLogService);
+  private confirm = inject(ConfirmDialogService);
 
   todayAttendance = signal<Attendance | null>(null);
   attendanceMap = signal<Map<string, Attendance>>(new Map());
@@ -151,6 +153,18 @@ export class AttendanceDashboardPageComponent implements OnInit {
   }
 
   async handleAction(): Promise<void> {
+    const isPunchOut = !!this.todayAttendance();
+    const confirmed = await this.confirm.confirmAction({
+      title: isPunchOut ? 'Punch Out' : 'Punch In',
+      message: isPunchOut
+        ? 'Are you sure you want to punch out now?'
+        : 'Are you sure you want to punch in now?',
+      confirmText: isPunchOut ? 'Punch Out' : 'Punch In',
+      confirmColor: isPunchOut ? '#dc2626' : '#0d9488',
+      icon: 'question',
+    });
+    if (!confirmed) return;
+
     try {
       if (this.todayAttendance()) {
         await this.attendanceService.updatePunchOut();

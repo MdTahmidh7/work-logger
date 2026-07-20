@@ -77,21 +77,25 @@ export class AttendanceHistoryPageComponent implements OnInit {
   }
 
   async loadData(): Promise<void> {
-    const records = await this.attendanceService.getAttendanceByDateRange(
-      this.filterStart(),
-      this.filterEnd()
-    );
+    try {
+      const records = await this.attendanceService.getAttendanceByDateRange(
+        this.filterStart(),
+        this.filterEnd()
+      );
 
-    const map = new Map<string, Attendance>();
-    for (const record of records) {
-      map.set(record.date, record);
+      const map = new Map<string, Attendance>();
+      for (const record of records) {
+        map.set(record.date, record);
+      }
+      this.attendanceMap.set(map);
+
+      this.monthlyStats.set(await this.attendanceService.getMonthlyStatistics(
+        this.filterStart(),
+        this.filterEnd()
+      ));
+    } catch {
+      this.notify.error('Failed to load attendance data');
     }
-    this.attendanceMap.set(map);
-
-    this.monthlyStats.set(await this.attendanceService.getMonthlyStatistics(
-      this.filterStart(),
-      this.filterEnd()
-    ));
   }
 
   onFilterStartChange(event: Event): void {

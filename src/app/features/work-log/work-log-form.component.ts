@@ -201,6 +201,17 @@ export class WorkLogFormComponent implements OnInit {
       return;
     }
 
+    if (this.isEditMode()) {
+      const confirmed = await this.confirm.confirmAction({
+        title: 'Update Log',
+        message: 'Are you sure you want to update this work log?',
+        confirmText: 'Update',
+        confirmColor: '#6750a4',
+        icon: 'question',
+      });
+      if (!confirmed) return;
+    }
+
     this.durationError.set('');
     const { title, details, date } = this.form.value;
     const dateStr = date instanceof Date

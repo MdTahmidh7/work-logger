@@ -58,9 +58,13 @@ export class WorkLogListPageComponent implements OnInit {
   async deleteLog(id: number): Promise<void> {
     const ok = await this.confirm.confirm('Delete Log', 'Are you sure you want to delete this log entry?');
     if (ok) {
-      await this.workLogService.delete(id);
-      this.filteredLogs.update(logs => logs.filter(l => l.id !== id));
-      this.notify.success('Log deleted');
+      try {
+        await this.workLogService.delete(id);
+        this.filteredLogs.update(logs => logs.filter(l => l.id !== id));
+        this.notify.success('Log deleted');
+      } catch {
+        this.notify.error('Failed to delete log');
+      }
     }
   }
 

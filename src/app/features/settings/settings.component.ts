@@ -56,76 +56,84 @@ export class SettingsComponent {
   }
 
   async downloadWorkLogExcel(): Promise<void> {
-    const logs = await this.workLogService.getByRange(this.workLogStart(), this.workLogEnd());
-    if (logs.length === 0) {
-      this.notify.warning('No work logs found for the selected date range');
-      return;
+    try {
+      const logs = await this.workLogService.getByRange(this.workLogStart(), this.workLogEnd());
+      if (logs.length === 0) {
+        this.notify.warning('No work logs found for the selected date range');
+        return;
+      }
+
+      const groups: { [key: string]: WorkLog[] } = {};
+      for (const log of logs) {
+        if (!groups[log.date]) groups[log.date] = [];
+        groups[log.date].push(log);
+      }
+
+      const rows = Object.keys(groups)
+        .sort((a, b) => b.localeCompare(a))
+        .flatMap(date => {
+          const dayLogs = groups[date];
+          const dayName = this.dateUtils.getDayName(date);
+          const totalHours = this.dateUtils.formatDuration(dayLogs.reduce((s, l) => s + l.durationMinutes, 0));
+          return dayLogs.map(log => ({
+            'Date': date,
+            'Day': dayName,
+            'Task Item': log.title,
+            'Details': log.details || '',
+            'Log Hours': this.dateUtils.formatDuration(log.durationMinutes),
+            'Log Minutes': log.durationMinutes,
+            'Total Day Hours': totalHours
+          }));
+        });
+
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Work Logs');
+      ws['!cols'] = [
+        { wch: 12 }, { wch: 10 }, { wch: 30 }, { wch: 30 },
+        { wch: 10 }, { wch: 12 }, { wch: 14 }
+      ];
+
+      const fileName = `work-logs-${this.workLogStart()}-to-${this.workLogEnd()}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      this.notify.success(`Exported ${logs.length} work logs`);
+    } catch {
+      this.notify.error('Failed to export work logs');
     }
-
-    const groups: { [key: string]: WorkLog[] } = {};
-    for (const log of logs) {
-      if (!groups[log.date]) groups[log.date] = [];
-      groups[log.date].push(log);
-    }
-
-    const rows = Object.keys(groups)
-      .sort((a, b) => b.localeCompare(a))
-      .flatMap(date => {
-        const dayLogs = groups[date];
-        const dayName = this.dateUtils.getDayName(date);
-        const totalHours = this.dateUtils.formatDuration(dayLogs.reduce((s, l) => s + l.durationMinutes, 0));
-        return dayLogs.map(log => ({
-          'Date': date,
-          'Day': dayName,
-          'Task Item': log.title,
-          'Details': log.details || '',
-          'Log Hours': this.dateUtils.formatDuration(log.durationMinutes),
-          'Log Minutes': log.durationMinutes,
-          'Total Day Hours': totalHours
-        }));
-      });
-
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Work Logs');
-    ws['!cols'] = [
-      { wch: 12 }, { wch: 10 }, { wch: 30 }, { wch: 30 },
-      { wch: 10 }, { wch: 12 }, { wch: 14 }
-    ];
-
-    const fileName = `work-logs-${this.workLogStart()}-to-${this.workLogEnd()}.xlsx`;
-    XLSX.writeFile(wb, fileName);
-    this.notify.success(`Exported ${logs.length} work logs`);
   }
 
   async downloadAttendanceExcel(): Promise<void> {
-    const records = await this.attendanceService.getAttendanceByDateRange(
-      this.attendanceStart(), this.attendanceEnd()
-    );
-    if (records.length === 0) {
-      this.notify.warning('No attendance records found for the selected date range');
-      return;
+    try {
+      const records = await this.attendanceService.getAttendanceByDateRange(
+        this.attendanceStart(), this.attendanceEnd()
+      );
+      if (records.length === 0) {
+        this.notify.warning('No attendance records found for the selected date range');
+        return;
+      }
+
+      const rows = records.map(r => ({
+        'Date': r.date,
+        'Day': parseISO(r.date).toLocaleDateString('en-US', { weekday: 'short' }),
+        'First Punch In': r.firstPunchIn ? formatTime(r.firstPunchIn) : '--',
+        'Last Punch Out': r.lastPunchOut ? formatTime(r.lastPunchOut) : '--',
+        'Working Hours': formatWorkingHoursHM(r.workingMinutes),
+        'Status': r.workingMinutes >= 420 ? 'Present' : r.firstPunchIn ? 'NFOH' : 'Absent'
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
+      ws['!cols'] = [
+        { wch: 12 }, { wch: 8 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 10 }
+      ];
+
+      const fileName = `attendance-${this.attendanceStart()}-to-${this.attendanceEnd()}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      this.notify.success(`Exported ${records.length} attendance records`);
+    } catch {
+      this.notify.error('Failed to export attendance records');
     }
-
-    const rows = records.map(r => ({
-      'Date': r.date,
-      'Day': parseISO(r.date).toLocaleDateString('en-US', { weekday: 'short' }),
-      'First Punch In': r.firstPunchIn ? formatTime(r.firstPunchIn) : '--',
-      'Last Punch Out': r.lastPunchOut ? formatTime(r.lastPunchOut) : '--',
-      'Working Hours': formatWorkingHoursHM(r.workingMinutes),
-      'Status': r.workingMinutes >= 420 ? 'Present' : r.firstPunchIn ? 'NFOH' : 'Absent'
-    }));
-
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
-    ws['!cols'] = [
-      { wch: 12 }, { wch: 8 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 10 }
-    ];
-
-    const fileName = `attendance-${this.attendanceStart()}-to-${this.attendanceEnd()}.xlsx`;
-    XLSX.writeFile(wb, fileName);
-    this.notify.success(`Exported ${records.length} attendance records`);
   }
 
   async exportData(): Promise<void> {
