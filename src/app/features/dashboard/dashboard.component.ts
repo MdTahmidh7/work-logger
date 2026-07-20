@@ -1,5 +1,6 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -14,39 +15,18 @@ import { NotificationService } from '../../core/services/notification.service';
 import { WorkLog } from '../../core/models/work-log.model';
 import { Attendance } from '../attendance/models/attendance.model';
 import { AttendanceService } from '../attendance/services/attendance.service';
-import { format, subDays } from 'date-fns';
-import * as XLSX from 'xlsx';
 
 @Component({
   standalone: true,
   selector: 'app-dashboard',
-  imports: [CommonModule, RouterModule, MatIconModule, MatButtonModule,
+  imports: [CommonModule, FormsModule, RouterModule, MatIconModule, MatButtonModule,
             StatisticCardComponent, ChartCardComponent, DateFilterComponent,
             TodayAttendanceCardComponent, AttendanceActionButtonComponent],
   template: `
     <div class="dashboard-wrapper">
       <div class="dashboard">
-        <div class="page-header">
-          <div>
-            <h1>Dashboard</h1>
-            <p class="subtitle">Overview of your work activity</p>
-          </div>
-          <div class="header-actions">
-            @if (groupedLogs().length > 0) {
-              <button class="download-btn" (click)="downloadExcel()">
-                <mat-icon>download</mat-icon>
-                Export Excel
-              </button>
-            }
-            <a routerLink="/work-log" class="add-btn">
-              <mat-icon>add</mat-icon>
-              Add Work Log
-            </a>
-          </div>
-        </div>
-
         <div class="attendance-section">
-          <div class="attendance-action-wrapper">
+          <div class="attendance-action-wrapper" [class.bg-punch-in]="!todayAttendance()" [class.bg-punch-out]="todayAttendance()">
             <app-attendance-action-button
               [attendance]="todayAttendance()"
               (action)="handleAttendanceAction()" />
@@ -56,13 +36,83 @@ import * as XLSX from 'xlsx';
           </div>
         </div>
 
-        <app-date-filter (rangeChange)="onFilterChange($event)" />
+        <div class="stats-row">
+          <div class="stats-section">
+            <div class="stats-section-header">
+              <mat-icon>people</mat-icon>
+              <span>Attendance Statistics</span>
+              <span class="stats-period">(Last 30 Days)</span>
+            </div>
+            <div class="stats-cards">
+              <div class="stat-card">
+                <div class="stat-icon present-bg">
+                  <mat-icon>person</mat-icon>
+                </div>
+                <div class="stat-info">
+                  <span class="stat-label">Total Present</span>
+                  <span class="stat-value present-color">{{ attendanceStats().presentDays }}</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon absent-bg">
+                  <mat-icon>person_off</mat-icon>
+                </div>
+                <div class="stat-info">
+                  <span class="stat-label">Total Absent</span>
+                  <span class="stat-value absent-color">{{ attendanceStats().absentDays }}</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon nfoh-bg">
+                  <mat-icon>description</mat-icon>
+                </div>
+                <div class="stat-info">
+                  <span class="stat-label">Total NFOH</span>
+                  <span class="stat-value nfoh-color">{{ attendanceStats().nfohDays }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
 
-        <div class="stats-grid">
-          <app-statistic-card [data]="statsData()[0]" />
-          <app-statistic-card [data]="statsData()[1]" />
-          <app-statistic-card [data]="statsData()[2]" />
+          <div class="stats-section">
+            <div class="stats-section-header">
+              <mat-icon>analytics</mat-icon>
+              <span>Work Log Statistics</span>
+              <span class="stats-period">(Last 30 Days)</span>
+            </div>
+            <div class="stats-cards">
+              <div class="stat-card">
+                <div class="stat-icon total-hours-bg">
+                  <mat-icon>schedule</mat-icon>
+                </div>
+                <div class="stat-info">
+                  <span class="stat-label">Total Log Hours</span>
+                  <span class="stat-value primary-color">{{ workLogStats().totalHours }}</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon today-hours-bg">
+                  <mat-icon>calendar_today</mat-icon>
+                </div>
+                <div class="stat-info">
+                  <span class="stat-label">Log Hours Today</span>
+                  <span class="stat-value primary-color">{{ workLogStats().todayHours }}</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon avg-hours-bg">
+                  <mat-icon>trending_up</mat-icon>
+                </div>
+                <div class="stat-info">
+                  <span class="stat-label">Avg Log Hours / Day</span>
+                  <span class="stat-value primary-color">{{ workLogStats().avgHours }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+
+        <app-date-filter (rangeChange)="onFilterChange($event)" />
 
         <div class="charts-row">
           <app-chart-card title="Hours by Hour (Today)" type="bar"
@@ -137,6 +187,10 @@ import * as XLSX from 'xlsx';
           }
         </div>
       </div>
+
+      <a routerLink="/work-log" class="fab-button" matTooltip="Add Work Log">
+        <mat-icon>add</mat-icon>
+      </a>
     </div>
   `,
   styles: [`
@@ -144,61 +198,139 @@ import * as XLSX from 'xlsx';
       max-width: 1100px;
       margin: 0 auto;
       padding: 0 20px;
+      position: relative;
     }
     .dashboard { padding-top: 82px; }
-    .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
-    .page-header h1 { font-size: 24px; font-weight: 700; color: var(--pwl-text-primary); }
-    .subtitle { color: var(--pwl-text-secondary); font-size: 13px; margin-top: 2px; }
-
-    .header-actions { display: flex; align-items: center; gap: 10px; }
-
-    .download-btn {
-      display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px;
-      border-radius: 10px; border: 1px solid var(--pwl-divider);
-      background: var(--pwl-surface); color: var(--pwl-text-secondary);
-      font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s;
-      font-family: 'Inter', sans-serif;
-    }
-    .download-btn:hover { background: var(--pwl-surface-variant); color: var(--pwl-text-primary); border-color: var(--pwl-primary); }
-    .download-btn mat-icon { font-size: 18px; width: 18px; height: 18px; }
-
-    .add-btn {
-      display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px;
-      border-radius: 10px; background: var(--pwl-primary); color: white;
-      font-weight: 600; font-size: 13px; text-decoration: none; transition: all 0.2s;
-    }
-    .add-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
 
     .attendance-section {
       display: grid;
-      grid-template-columns: auto 1fr;
+      grid-template-columns: 340px 1fr;
       gap: 16px;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
 
     .attendance-action-wrapper {
+      border-radius: 14px;
+      padding: 24px;
+      transition: background 0.3s;
+    }
+
+    .attendance-action-wrapper.bg-punch-in {
+      background: rgba(13, 148, 136, 0.06);
+      border: 1px solid rgba(13, 148, 136, 0.12);
+    }
+
+    .attendance-action-wrapper.bg-punch-out {
+      background: rgba(220, 38, 38, 0.06);
+      border: 1px solid rgba(220, 38, 38, 0.12);
+    }
+
+    .attendance-card-wrapper { min-width: 0; }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .stats-section {
       background: var(--pwl-surface);
       border-radius: 14px;
       border: 1px solid var(--pwl-divider);
-      padding: 24px;
+      padding: 20px;
+    }
+
+    .stats-section-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--pwl-text-primary);
+    }
+
+    .stats-section-header mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+      color: var(--pwl-primary);
+    }
+
+    .stats-period {
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--pwl-text-secondary);
+    }
+
+    .stats-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .stat-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 10px;
+      background: var(--pwl-surface-variant);
+      border: 1px solid var(--pwl-divider);
+    }
+
+    .stat-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
     }
 
-    .attendance-card-wrapper {
+    .stat-icon mat-icon { font-size: 20px; width: 20px; height: 20px; }
+
+    .present-bg { background: rgba(13, 148, 136, 0.12); color: #0d9488; }
+    .absent-bg { background: rgba(220, 38, 38, 0.12); color: #dc2626; }
+    .nfoh-bg { background: rgba(217, 119, 6, 0.12); color: #d97706; }
+    .total-hours-bg { background: rgba(103, 80, 164, 0.12); color: #6750a4; }
+    .today-hours-bg { background: rgba(13, 148, 136, 0.12); color: #0d9488; }
+    .avg-hours-bg { background: rgba(217, 119, 6, 0.12); color: #d97706; }
+
+    .stat-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
       min-width: 0;
     }
 
-    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-label {
+      font-size: 11px;
+      color: var(--pwl-text-secondary);
+      font-weight: 500;
+      white-space: nowrap;
+    }
 
-    .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .stat-value {
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .present-color { color: #0d9488; }
+    .absent-color { color: #dc2626; }
+    .nfoh-color { color: #d97706; }
+    .primary-color { color: var(--pwl-primary); }
+
+    .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
 
     .recent-section {
       background: var(--pwl-surface); border-radius: 14px; border: 1px solid var(--pwl-divider); overflow: hidden;
     }
     .section-header { padding: 14px 20px; border-bottom: 1px solid var(--pwl-divider); }
-    .section-header h2 { font-size: 15px; font-weight: 600; }
+    .section-header h2 { font-size: 15px; font-weight: 600; margin: 0; }
 
     .empty-state { text-align: center; padding: 40px 20px; }
     .empty-state mat-icon { font-size: 40px; width: 40px; height: 40px; color: var(--pwl-text-tertiary); margin-bottom: 10px; }
@@ -289,20 +421,48 @@ import * as XLSX from 'xlsx';
     .page-btn mat-icon { font-size: 20px; width: 20px; height: 20px; }
     .page-info { font-size: 13px; color: var(--pwl-text-secondary); font-weight: 500; }
 
+    .fab-button {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--pwl-primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 16px rgba(103, 80, 164, 0.35);
+      text-decoration: none;
+      transition: all 0.3s;
+      z-index: 100;
+    }
+
+    .fab-button:hover {
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 6px 24px rgba(103, 80, 164, 0.45);
+    }
+
+    .fab-button mat-icon {
+      font-size: 28px;
+      width: 28px;
+      height: 28px;
+    }
+
     @media (max-width: 1024px) {
       .charts-row { grid-template-columns: 1fr; }
+      .stats-row { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 768px) {
-      .stats-grid { grid-template-columns: 1fr; }
-      .page-header { flex-direction: column; gap: 12px; }
-      .header-actions { width: 100%; }
-      .download-btn, .add-btn { flex: 1; justify-content: center; }
       .attendance-section { grid-template-columns: 1fr; }
       .table-header, .table-row {
         grid-template-columns: 70px 60px 1fr 70px 70px 36px;
         padding: 8px 14px;
       }
+      .fab-button { bottom: 20px; right: 20px; width: 50px; height: 50px; }
+      .fab-button mat-icon { font-size: 24px; width: 24px; height: 24px; }
     }
   `]
 })
@@ -315,6 +475,7 @@ export class DashboardComponent implements OnInit {
   logs = signal<WorkLog[]>([]);
   currentPage = signal(0);
   todayAttendance = signal<Attendance | null>(null);
+  attendanceRecords = signal<Attendance[]>([]);
 
   statsData = computed(() => {
     const all = this.logs();
@@ -327,33 +488,58 @@ export class DashboardComponent implements OnInit {
 
     return [
       {
-        icon: 'schedule',
-        iconColor: '#6750a4',
-        iconBg: 'rgba(103, 80, 164, 0.1)',
+        icon: 'schedule', iconColor: '#6750a4', iconBg: 'rgba(103, 80, 164, 0.1)',
         cardBg: 'linear-gradient(135deg, rgba(103, 80, 164, 0.05) 0%, rgba(103, 80, 164, 0.02) 100%)',
-        valueColor: '#6750a4',
-        value: (totalMinutes / 60).toFixed(1) + 'h',
-        label: 'Total Hours'
+        valueColor: '#6750a4', value: (totalMinutes / 60).toFixed(1) + 'h', label: 'Total Hours'
       },
       {
-        icon: 'today',
-        iconColor: '#0d9488',
-        iconBg: 'rgba(13, 148, 136, 0.1)',
+        icon: 'today', iconColor: '#0d9488', iconBg: 'rgba(13, 148, 136, 0.1)',
         cardBg: 'linear-gradient(135deg, rgba(13, 148, 136, 0.05) 0%, rgba(13, 148, 136, 0.02) 100%)',
-        valueColor: '#0d9488',
-        value: (todayMinutes / 60).toFixed(1) + 'h',
-        label: 'Today\'s Hours'
+        valueColor: '#0d9488', value: (todayMinutes / 60).toFixed(1) + 'h', label: 'Today\'s Hours'
       },
       {
-        icon: 'trending_up',
-        iconColor: '#d97706',
-        iconBg: 'rgba(217, 119, 6, 0.1)',
+        icon: 'trending_up', iconColor: '#d97706', iconBg: 'rgba(217, 119, 6, 0.1)',
         cardBg: 'linear-gradient(135deg, rgba(217, 119, 6, 0.05) 0%, rgba(217, 119, 6, 0.02) 100%)',
-        valueColor: '#d97706',
-        value: avg.toFixed(1) + 'h',
-        label: 'Avg Hours/Day'
+        valueColor: '#d97706', value: avg.toFixed(1) + 'h', label: 'Avg Hours/Day'
       }
     ];
+  });
+
+  attendanceStats = computed(() => {
+    const records = this.attendanceRecords();
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const totalDays = 30;
+    let presentDays = 0;
+    let nfohDays = 0;
+
+    records.forEach((att) => {
+      if (att.workingMinutes >= 420) {
+        presentDays++;
+      } else {
+        nfohDays++;
+      }
+    });
+
+    const absentDays = totalDays - presentDays - nfohDays;
+    return { presentDays, absentDays, nfohDays };
+  });
+
+  workLogStats = computed(() => {
+    const logs = this.logs();
+    const today = this.dateUtils.today();
+    const totalMinutes = logs.reduce((s, l) => s + l.durationMinutes, 0);
+    const todayMinutes = logs.filter(l => l.date === today).reduce((s, l) => s + l.durationMinutes, 0);
+    const days = new Set(logs.map(l => l.date));
+    const avgMinutes = days.size > 0 ? totalMinutes / days.size : 0;
+
+    return {
+      totalHours: (totalMinutes / 60).toFixed(1) + 'h',
+      todayHours: this.formatWorkingHours(todayMinutes),
+      avgHours: (avgMinutes / 60).toFixed(2) + 'h'
+    };
   });
 
   hourlyLabels = computed(() => Array.from({ length: 24 }, (_, i) => `${i}:00`));
@@ -409,6 +595,12 @@ export class DashboardComponent implements OnInit {
     const range = this.dateUtils.getDateRange('thisMonth');
     this.logs.set(await db.getLogsByRange(range.startDate, range.endDate));
     this.todayAttendance.set(await this.attendanceService.getTodayAttendance() || null);
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const startDate = thirtyDaysAgo.toISOString().split('T')[0];
+    const endDate = new Date().toISOString().split('T')[0];
+    this.attendanceRecords.set(await this.attendanceService.getAttendanceByDateRange(startDate, endDate));
   }
 
   async onFilterChange(range: { startDate: string; endDate: string }): Promise<void> {
@@ -439,37 +631,17 @@ export class DashboardComponent implements OnInit {
     if (this.currentPage() < this.totalPages() - 1) this.currentPage.update(p => p + 1);
   }
 
-  downloadExcel(): void {
-    const rows = this.groupedLogs().flatMap(group =>
-      group.logs.map(log => ({
-        'Date': group.date,
-        'Day': group.dayName,
-        'Task Item': log.title,
-        'Details': log.details || '',
-        'Log Hours': this.dateUtils.formatDuration(log.durationMinutes),
-        'Log Minutes': log.durationMinutes,
-        'Total Day Hours': group.totalHours
-      }))
-    );
-
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Work Logs');
-
-    ws['!cols'] = [
-      { wch: 12 }, { wch: 10 }, { wch: 30 }, { wch: 30 },
-      { wch: 10 }, { wch: 12 }, { wch: 14 }
-    ];
-
-    const fileName = `work-logs-${new Date().toISOString().split('T')[0]}.xlsx`;
-    XLSX.writeFile(wb, fileName);
-  }
-
   formatShortDate(date: string): string {
     return this.dateUtils.formatShortDate(date);
   }
 
   formatDuration(minutes: number): string {
     return this.dateUtils.formatDuration(minutes);
+  }
+
+  formatWorkingHours(minutes: number): string {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
   }
 }

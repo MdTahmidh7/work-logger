@@ -307,6 +307,13 @@ export class WorkLogFormComponent implements OnInit {
       this.isEditMode.set(true);
       this.logId.set(+id);
       this.loadLog(+id);
+    } else {
+      const dateParam = this.route.snapshot.queryParamMap.get('date');
+      if (dateParam) {
+        const parts = dateParam.split('-');
+        const date = new Date(+parts[0], +parts[1] - 1, +parts[2]);
+        this.form.patchValue({ date });
+      }
     }
   }
 

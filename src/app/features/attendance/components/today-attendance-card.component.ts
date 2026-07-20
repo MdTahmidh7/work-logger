@@ -10,7 +10,10 @@ import { Attendance } from '../models/attendance.model';
   template: `
     <div class="today-card">
       <div class="card-header">
-        <div class="card-title">Today's Attendance</div>
+        <div class="header-left">
+          <mat-icon class="header-icon">calendar_today</mat-icon>
+          <span class="card-title">Today's Attendance</span>
+        </div>
         <div class="status-badge" [class]="statusClass()">
           {{ statusLabel() }}
         </div>
@@ -19,6 +22,9 @@ import { Attendance } from '../models/attendance.model';
       <div class="card-body">
         <div class="info-row">
           <div class="info-item">
+            <div class="info-icon punch-in-icon-bg">
+              <mat-icon>login</mat-icon>
+            </div>
             <span class="info-label">First Punch In</span>
             <span class="info-value punch-in-color">
               @if (attendance()) {
@@ -28,7 +34,11 @@ import { Attendance } from '../models/attendance.model';
               }
             </span>
           </div>
+          <div class="info-divider"></div>
           <div class="info-item">
+            <div class="info-icon punch-out-icon-bg">
+              <mat-icon>logout</mat-icon>
+            </div>
             <span class="info-label">Last Punch Out</span>
             <span class="info-value punch-out-color">
               @if (attendance()?.lastPunchOut) {
@@ -38,7 +48,11 @@ import { Attendance } from '../models/attendance.model';
               }
             </span>
           </div>
+          <div class="info-divider"></div>
           <div class="info-item">
+            <div class="info-icon working-icon-bg">
+              <mat-icon>schedule</mat-icon>
+            </div>
             <span class="info-label">Working Hour</span>
             <span class="info-value working-color">{{ workingHours() }}</span>
           </div>
@@ -53,6 +67,7 @@ import { Attendance } from '../models/attendance.model';
       border: 1px solid var(--pwl-divider);
       overflow: hidden;
       height: 100%;
+      width: 100%;
     }
 
     .card-header {
@@ -61,6 +76,19 @@ import { Attendance } from '../models/attendance.model';
       align-items: center;
       padding: 16px 20px;
       border-bottom: 1px solid var(--pwl-divider);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+      color: var(--pwl-primary);
     }
 
     .card-title {
@@ -102,14 +130,55 @@ import { Attendance } from '../models/attendance.model';
 
     .info-row {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 16px;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      gap: 0;
+      align-items: center;
+    }
+
+    .info-divider {
+      width: 1px;
+      height: 48px;
+      background: var(--pwl-divider);
+      margin: 0 16px;
     }
 
     .info-item {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      align-items: center;
+      gap: 6px;
+      text-align: center;
+    }
+
+    .info-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 2px;
+    }
+
+    .info-icon mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+
+    .punch-in-icon-bg {
+      background: rgba(13, 148, 136, 0.1);
+      color: #0d9488;
+    }
+
+    .punch-out-icon-bg {
+      background: rgba(220, 38, 38, 0.1);
+      color: #dc2626;
+    }
+
+    .working-icon-bg {
+      background: rgba(103, 80, 164, 0.1);
+      color: #6750a4;
     }
 
     .info-label {
@@ -120,7 +189,7 @@ import { Attendance } from '../models/attendance.model';
 
     .info-value {
       font-size: 16px;
-      font-weight: 600;
+      font-weight: 700;
       color: var(--pwl-text-primary);
     }
 
