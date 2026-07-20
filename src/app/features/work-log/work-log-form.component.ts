@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -7,8 +7,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDatepickerModule } from '@angular/material/datepicker';
+import { DateFilterComponent } from '../../shared/components/date-filter.component';
 import { db } from '../../core/database/database.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { DateUtilsService } from '../../core/services/date-utils.service';
+import { WorkLog } from '../../core/models/work-log.model';
 
 @Component({
   standalone: true,
@@ -16,267 +19,590 @@ import { NotificationService } from '../../core/services/notification.service';
   imports: [
     CommonModule, RouterModule, ReactiveFormsModule,
     MatIconModule, MatButtonModule, MatInputModule, MatFormFieldModule,
-    MatDatepickerModule
+    MatDatepickerModule, DateFilterComponent
   ],
   template: `
-    <div class="form-page">
-      <div class="form-header">
-        <a routerLink="/dashboard" class="back-link">
-          <mat-icon>arrow_back</mat-icon> Dashboard
-        </a>
-        <h1>{{ isEditMode() ? 'Edit Work Log' : 'Add Work Log' }}</h1>
-      </div>
+    <div class="page-wrapper">
+      <div class="page">
+        <div class="form-card">
+          <div class="card-header">
+            <mat-icon class="card-icon">{{ isEditMode() ? 'edit_note' : 'add_task' }}</mat-icon>
+            <h2>{{ isEditMode() ? 'Edit Log' : 'New Log' }}</h2>
+          </div>
 
-      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="work-log-form">
-        <mat-form-field appearance="outline">
-          <mat-label>Title</mat-label>
-          <input matInput formControlName="title" placeholder="What did you work on?">
-          @if (form.get('title')?.hasError('required') && form.get('title')?.touched) {
-            <mat-error>Title is required</mat-error>
-          }
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Details</mat-label>
-          <textarea matInput formControlName="details" rows="3"
-                    placeholder="Optional details about your work"></textarea>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Date</mat-label>
-          <input matInput [matDatepicker]="picker" formControlName="date" [max]="maxDate">
-          <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
-          <mat-datepicker #picker></mat-datepicker>
-          @if (form.get('date')?.hasError('matDatepickerMax')) {
-            <mat-error>Cannot select future dates</mat-error>
-          }
-        </mat-form-field>
-
-        <div class="duration-section">
-          <label class="duration-label">Duration</label>
-          <div class="duration-inputs">
-            <div class="duration-field">
-              <input type="number" formControlName="hours" min="0" max="24" class="duration-input">
-              <span class="duration-unit">hours</span>
+          <form [formGroup]="form" (ngSubmit)="onSubmit()" class="log-form">
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="title-field">
+                <mat-label>Title</mat-label>
+                <input matInput formControlName="title" placeholder="What did you work on?">
+                @if (form.get('title')?.hasError('required') && form.get('title')?.touched) {
+                  <mat-error>Title is required</mat-error>
+                }
+              </mat-form-field>
+              <button type="button" class="icon-btn" [class.active]="showDetails()" (click)="showDetails.set(!showDetails())" matTooltip="Add details">
+                <mat-icon>{{ showDetails() ? 'expand_less' : 'notes' }}</mat-icon>
+              </button>
             </div>
-            <div class="duration-field">
-              <input type="number" formControlName="minutes" min="0" max="59" step="5" class="duration-input">
-              <span class="duration-unit">min</span>
+
+            @if (showDetails()) {
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Details</mat-label>
+                  <textarea matInput formControlName="details" rows="1"
+                            placeholder="Optional details"></textarea>
+                </mat-form-field>
+              </div>
+            }
+
+            <div class="form-row date-duration-row">
+              <mat-form-field appearance="outline" class="date-field">
+                <mat-label>Date</mat-label>
+                <input matInput [matDatepicker]="picker" formControlName="date" [max]="maxDate">
+                <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+                <mat-datepicker #picker></mat-datepicker>
+                @if (form.get('date')?.hasError('matDatepickerMax')) {
+                  <mat-error>Cannot select future dates</mat-error>
+                }
+              </mat-form-field>
+
+              <div class="duration-field-wrap">
+                <div class="duration-inputs">
+                  <input type="number" formControlName="hours" min="0" max="24" class="dur-input" placeholder="0">
+                  <span class="dur-sep">h</span>
+                  <input type="number" formControlName="minutes" min="0" max="59" step="5" class="dur-input" placeholder="30">
+                  <span class="dur-sep">m</span>
+                </div>
+                @if (durationError()) {
+                  <div class="error-msg">{{ durationError() }}</div>
+                }
+              </div>
+            </div>
+
+            <div class="bottom-row">
+              <div class="presets-row">
+                @for (preset of quickPresets; track preset) {
+                  <button type="button" class="preset-btn" [class.active]="getTotalMinutes() === preset"
+                          (click)="setDuration(preset)">
+                    {{ preset >= 60 ? (preset / 60) + 'h' : preset + 'm' }}
+                  </button>
+                }
+              </div>
+
+              <div class="submit-row">
+                @if (isEditMode()) {
+                  <button type="button" class="btn-cancel" (click)="cancelEdit()">Cancel</button>
+                }
+                <button type="submit" class="btn-submit" [disabled]="form.invalid">
+                  <mat-icon>{{ isEditMode() ? 'save' : 'add' }}</mat-icon>
+                  {{ isEditMode() ? 'Update' : 'Add Log' }}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <div class="list-section">
+          <div class="list-header">
+            <div class="list-title-group">
+              <h2>Work Logs</h2>
+              <span class="log-count">{{ groupedLogs().length }} days &middot; {{ totalLogsCount() }} logs</span>
             </div>
           </div>
-          @if (durationError()) {
-            <div class="error-msg">{{ durationError() }}</div>
+
+          <div class="filter-bar">
+            <app-date-filter (rangeChange)="onFilterChange($event)" />
+          </div>
+
+          @if (groupedLogs().length === 0) {
+            <div class="empty-state">
+              <div class="empty-icon">
+                <mat-icon>folder_open</mat-icon>
+              </div>
+              <h3>No logs found</h3>
+              <p>No work logs match your current filter.</p>
+            </div>
+          } @else {
+            <div class="activity-table">
+              <div class="table-header">
+                <div class="th">Date</div>
+                <div class="th">Day</div>
+                <div class="th">Task Items</div>
+                <div class="th">Log Hours</div>
+                <div class="th">Total</div>
+                <div class="th"></div>
+              </div>
+              @for (group of pagedLogs(); track group.date) {
+                <div class="table-row"
+                     [class.friday]="group.isFriday"
+                     [class.saturday]="group.isSaturday"
+                     [class.workday]="!group.isFriday && !group.isSaturday">
+                  <div class="td">{{ formatShortDate(group.date) }}</div>
+                  <div class="td day-cell" [class.holiday]="group.isFriday || group.isSaturday">{{ group.dayName }}</div>
+                  <div class="td tasks-cell">
+                    @for (log of group.logs; track log.id) {
+                      <div class="task-item">{{ log.title }}</div>
+                    }
+                  </div>
+                  <div class="td hours-cell">
+                    @for (log of group.logs; track log.id) {
+                      <div class="hour-item">{{ formatDuration(log.durationMinutes) }}</div>
+                    }
+                  </div>
+                  <div class="td total-cell">
+                    <span class="total-badge" [class.friday-badge]="group.isFriday" [class.saturday-badge]="group.isSaturday">
+                      {{ group.totalHours }}
+                    </span>
+                  </div>
+                  <div class="td actions-cell">
+                    <a [routerLink]="['/edit', group.logs[0].id]" class="edit-link" matTooltip="Edit log">
+                      <mat-icon class="edit-icon">edit</mat-icon>
+                    </a>
+                  </div>
+                </div>
+              }
+            </div>
+            @if (totalPages() > 1) {
+              <div class="pagination">
+                <button mat-icon-button class="page-btn" [disabled]="currentPage() === 0" (click)="prevPage()">
+                  <mat-icon>chevron_left</mat-icon>
+                </button>
+                <span class="page-info">{{ currentPage() + 1 }} / {{ totalPages() }}</span>
+                <button mat-icon-button class="page-btn" [disabled]="currentPage() >= totalPages() - 1" (click)="nextPage()">
+                  <mat-icon>chevron_right</mat-icon>
+                </button>
+              </div>
+            }
           }
         </div>
-
-        <div class="quick-durations">
-          @for (preset of quickPresets; track preset) {
-            <button type="button" class="preset-btn" (click)="setDuration(preset)">{{ preset }}m</button>
-          }
-        </div>
-
-        <div class="duration-display">
-          <mat-icon>schedule</mat-icon>
-          <span>Total: <strong>{{ getTotalMinutes() }} min</strong> ({{ getHours() }}h {{ getMins() }}m)</span>
-        </div>
-
-        <div class="form-actions">
-          <a routerLink="/dashboard" class="cancel-btn">Cancel</a>
-          <button type="submit" mat-raised-button color="primary" class="submit-btn" [disabled]="form.invalid">
-            <mat-icon>{{ isEditMode() ? 'save' : 'add' }}</mat-icon>
-            {{ isEditMode() ? 'Update Log' : 'Add Log' }}
-          </button>
-        </div>
-      </form>
+      </div>
     </div>
   `,
   styles: [`
-    .form-page {
-      max-width: 640px;
+    .page-wrapper {
+      min-height: 100vh;
+      background: var(--pwl-background);
+    }
+
+    .page {
+      max-width: 960px;
       margin: 0 auto;
-      padding-top: 100px;
-      padding-left: 20px;
-      padding-right: 20px;
+      padding: 82px 20px 40px;
     }
 
-    .form-header {
-      margin-bottom: 32px;
+    .form-card {
+      background: var(--pwl-surface);
+      border-radius: 14px;
+      border: 1px solid var(--pwl-divider);
+      padding: 16px 20px;
+      margin-bottom: 16px;
     }
 
-    .back-link {
-      display: inline-flex;
+    .card-header {
+      display: flex;
       align-items: center;
-      gap: 4px;
-      color: var(--pwl-text-secondary);
-      font-size: 14px;
-      font-weight: 500;
-      text-decoration: none;
+      gap: 10px;
       margin-bottom: 12px;
-      transition: color 0.2s;
     }
 
-    .back-link:hover {
+    .card-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
       color: var(--pwl-primary);
     }
 
-    .back-link mat-icon {
-      font-size: 18px;
-      width: 18px;
-      height: 18px;
-    }
-
-    .form-header h1 {
-      font-size: 28px;
-      font-weight: 700;
-    }
-
-    .work-log-form {
-      background: var(--pwl-surface);
-      border-radius: 16px;
-      padding: 32px;
-      border: 1px solid var(--pwl-divider);
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .work-log-form mat-form-field {
-      width: 100%;
-    }
-
-    .duration-section {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-top: 8px;
-    }
-
-    .duration-label {
-      font-size: 14px;
+    .card-header h2 {
+      font-size: 15px;
       font-weight: 600;
       color: var(--pwl-text-primary);
+      margin: 0;
     }
 
-    .duration-inputs {
+    .log-form {
       display: flex;
-      gap: 16px;
+      flex-direction: column;
+      gap: 2px;
     }
 
-    .duration-field {
+    .form-row {
       display: flex;
-      align-items: center;
       gap: 10px;
+      align-items: start;
+      margin-bottom: 4px;
+    }
+
+    .form-row .full-width {
       flex: 1;
     }
 
-    .duration-input {
-      width: 100%;
-      padding: 14px 16px;
-      border: 1px solid var(--pwl-divider);
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 600;
-      background: var(--pwl-surface);
-      color: var(--pwl-text-primary);
-      font-family: 'Inter', sans-serif;
-      transition: border-color 0.2s, box-shadow 0.2s;
+    .title-field {
+      flex: 1;
     }
 
-    .duration-input:focus {
-      outline: none;
-      border-color: var(--pwl-primary);
-      box-shadow: 0 0 0 3px rgba(103, 80, 164, 0.1);
-    }
-
-    .duration-unit {
-      color: var(--pwl-text-secondary);
-      font-size: 14px;
-      font-weight: 500;
-      white-space: nowrap;
-    }
-
-    .error-msg {
-      color: var(--pwl-danger);
-      font-size: 13px;
-    }
-
-    .quick-durations {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 4px;
-    }
-
-    .preset-btn {
-      padding: 8px 16px;
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      min-height: 40px;
       border-radius: 10px;
       border: 1px solid var(--pwl-divider);
       background: var(--pwl-surface);
       color: var(--pwl-text-secondary);
-      font-size: 13px;
-      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
-      transition: all 0.2s;
-      font-family: 'Inter', sans-serif;
+      transition: all 0.15s;
+      margin-top: 8px;
+      flex-shrink: 0;
     }
 
-    .preset-btn:hover {
+    .icon-btn:hover {
       border-color: var(--pwl-primary);
       color: var(--pwl-primary);
       background: var(--pwl-primary-light);
     }
 
-    .duration-display {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 14px 18px;
-      background: var(--pwl-primary-light);
-      border-radius: 12px;
+    .icon-btn.active {
+      border-color: var(--pwl-primary);
       color: var(--pwl-primary);
-      font-size: 14px;
-      font-weight: 500;
-      margin-top: 4px;
+      background: var(--pwl-primary-light);
     }
 
-    .duration-display mat-icon {
+    .icon-btn mat-icon {
       font-size: 20px;
       width: 20px;
       height: 20px;
     }
 
-    .form-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 12px;
-      margin-top: 16px;
-      padding-top: 20px;
-      border-top: 1px solid var(--pwl-divider);
+    .log-form mat-form-field {
+      width: 100%;
     }
 
-    .cancel-btn {
-      padding: 10px 24px;
-      border-radius: 12px;
+    .date-duration-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .date-field {
+      font-size: 14px;
+    }
+
+    .duration-field-wrap {
+      flex: 1;
+      margin-bottom: 20px;
+    }
+
+    .duration-inputs {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid var(--pwl-divider);
+      border-radius: 4px;
+      padding: 0 12px;
+      height: 56px;
+      transition: border-color 0.2s;
+    }
+
+    .duration-inputs:focus-within {
+      border-color: var(--pwl-primary);
+      border-width: 2px;
+      padding: 0 11px;
+    }
+
+    .dur-input {
+      width: 40px;
+      border: none;
+      outline: none;
+      font-size: 16px;
+      font-weight: 500;
+      background: transparent;
+      color: var(--pwl-text-primary);
+      font-family: 'Inter', sans-serif;
+      text-align: center;
+      -moz-appearance: textfield;
+    }
+
+    .dur-input::-webkit-outer-spin-button,
+    .dur-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .dur-sep {
+      color: var(--pwl-text-tertiary);
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .error-msg {
+      color: var(--pwl-danger);
+      font-size: 11px;
+      padding-left: 2px;
+      margin-top: 2px;
+    }
+
+    .bottom-row {
+      border-top: 1px solid var(--pwl-divider);
+      margin-top: 8px;
+      padding-top: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .presets-row {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+      flex: 1;
+    }
+
+    .preset-btn {
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--pwl-divider);
+      background: var(--pwl-surface);
+      color: var(--pwl-text-secondary);
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .preset-btn:hover,
+    .preset-btn.active {
+      border-color: var(--pwl-primary);
+      color: var(--pwl-primary);
+      background: var(--pwl-primary-light);
+    }
+
+    .submit-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .btn-cancel {
+      padding: 7px 16px;
+      border-radius: 8px;
       border: 1px solid var(--pwl-divider);
       background: transparent;
       color: var(--pwl-text-secondary);
       font-weight: 600;
-      font-size: 14px;
-      text-decoration: none;
-      transition: all 0.2s;
-      display: inline-flex;
-      align-items: center;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
       font-family: 'Inter', sans-serif;
     }
 
-    .cancel-btn:hover {
+    .btn-cancel:hover {
       background: var(--pwl-surface-variant);
     }
 
-    .submit-btn {
+    .btn-submit {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
+      padding: 7px 18px;
+      border-radius: 8px;
+      border: none;
+      background: var(--pwl-primary);
+      color: white;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: 'Inter', sans-serif;
+      box-shadow: 0 2px 6px rgba(103, 80, 164, 0.25);
+    }
+
+    .btn-submit:hover:not(:disabled) {
+      box-shadow: 0 3px 12px rgba(103, 80, 164, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-submit mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+
+    .list-section {
+      background: var(--pwl-surface);
+      border-radius: 14px;
+      border: 1px solid var(--pwl-divider);
+      overflow: hidden;
+    }
+
+    .list-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--pwl-divider);
+    }
+
+    .list-title-group h2 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--pwl-text-primary);
+      margin: 0;
+    }
+
+    .log-count {
+      font-size: 11px;
+      color: var(--pwl-text-secondary);
+    }
+
+    .filter-bar {
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--pwl-divider);
+      background: var(--pwl-surface-variant);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .empty-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      background: var(--pwl-surface-variant);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px;
+    }
+
+    .empty-icon mat-icon {
+      font-size: 26px;
+      width: 26px;
+      height: 26px;
+      color: var(--pwl-text-tertiary);
+    }
+
+    .empty-state h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--pwl-text-primary);
+      margin: 0 0 4px;
+    }
+
+    .empty-state p {
+      font-size: 12px;
+      color: var(--pwl-text-secondary);
+      margin: 0;
+    }
+
+    .activity-table { width: 100%; }
+
+    .table-header {
+      display: grid;
+      grid-template-columns: 90px 80px 1fr 90px 80px 40px;
+      padding: 8px 20px;
+      border-bottom: 1px solid var(--pwl-divider);
+      background: var(--pwl-surface-variant);
+    }
+
+    .th {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--pwl-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .table-row {
+      display: grid;
+      grid-template-columns: 90px 80px 1fr 90px 80px 40px;
+      padding: 8px 20px;
+      border-bottom: 1px solid var(--pwl-divider);
+      align-items: center;
+      transition: background 0.2s;
+    }
+
+    .table-row:last-child { border-bottom: none; }
+    .table-row:hover { filter: brightness(0.97); }
+
+    .table-row.workday { background: rgba(13, 148, 136, 0.04); }
+    .table-row.workday:hover { background: rgba(13, 148, 136, 0.08); }
+
+    .table-row.friday { background: rgba(255, 204, 0, 0.06); }
+    .table-row.friday:hover { background: rgba(255, 204, 0, 0.12); }
+
+    .table-row.saturday { background: rgba(255, 107, 107, 0.06); }
+    .table-row.saturday:hover { background: rgba(255, 107, 107, 0.12); }
+
+    .td { font-size: 12px; color: var(--pwl-text-primary); }
+
+    .day-cell { color: var(--pwl-text-secondary); font-size: 11px; }
+    .day-cell.holiday { font-weight: 600; }
+
+    .tasks-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+    .task-item {
+      font-size: 12px; font-weight: 500; color: var(--pwl-text-primary);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    .hours-cell { display: flex; flex-direction: column; gap: 2px; }
+
+    .hour-item { font-size: 11px; color: var(--pwl-text-secondary); }
+
+    .total-cell { text-align: center; }
+
+    .total-badge {
+      display: inline-block; padding: 2px 6px; border-radius: 5px;
+      font-size: 11px; font-weight: 600;
+      background: var(--pwl-primary-light); color: var(--pwl-primary);
+    }
+    .total-badge.friday-badge { background: rgba(255, 204, 0, 0.15); color: #b38600; }
+    .total-badge.saturday-badge { background: rgba(255, 107, 107, 0.15); color: #cc3333; }
+
+    .actions-cell { display: flex; justify-content: center; align-items: center; }
+
+    .edit-link {
+      display: flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; border-radius: 6px;
+      color: var(--pwl-text-secondary); transition: all 0.15s;
+      text-decoration: none;
+    }
+    .edit-link:hover { background: var(--pwl-primary-light); color: var(--pwl-primary); }
+    .edit-icon { font-size: 16px; width: 16px; height: 16px; }
+
+    .pagination {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 10px 20px; border-top: 1px solid var(--pwl-divider);
+    }
+    .page-btn { width: 28px; height: 28px; color: var(--pwl-text-secondary); }
+    .page-btn mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    .page-info { font-size: 12px; color: var(--pwl-text-secondary); font-weight: 500; }
+
+    @media (max-width: 768px) {
+      .page { padding: 82px 16px 32px; }
+      .form-card { padding: 14px 16px; }
+      .date-duration-row { grid-template-columns: 1fr; }
+      .bottom-row { flex-direction: column; align-items: stretch; }
+      .submit-row { justify-content: flex-end; }
+      .table-header, .table-row {
+        grid-template-columns: 70px 60px 1fr 70px 70px 36px;
+        padding: 6px 14px;
+      }
+      .list-header { padding: 12px 14px; }
+      .filter-bar { padding: 8px 14px; }
     }
   `]
 })
@@ -285,13 +611,19 @@ export class WorkLogFormComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private notify = inject(NotificationService);
+  private dateUtils = inject(DateUtilsService);
 
   isEditMode = signal(false);
   logId = signal<number>(0);
   durationError = signal('');
+  showDetails = signal(false);
   maxDate = new Date();
 
-  quickPresets = [15, 30, 45, 60, 90, 120];
+  logs = signal<WorkLog[]>([]);
+  currentPage = signal(0);
+  private readonly PAGE_SIZE = 7;
+
+  quickPresets = [15, 30, 45, 60, 90, 120, 150, 180, 210, 240];
 
   form: FormGroup = this.fb.group({
     title: ['', Validators.required],
@@ -301,7 +633,37 @@ export class WorkLogFormComponent implements OnInit {
     minutes: [30, [Validators.min(0), Validators.max(59)]]
   });
 
+  groupedLogs = computed(() => {
+    const logs = this.logs();
+    const groups: { [key: string]: WorkLog[] } = {};
+    for (const log of logs) {
+      if (!groups[log.date]) groups[log.date] = [];
+      groups[log.date].push(log);
+    }
+    return Object.keys(groups)
+      .sort((a, b) => b.localeCompare(a))
+      .map(date => ({
+        date,
+        logs: groups[date],
+        dayName: this.dateUtils.getDayName(date),
+        totalHours: this.dateUtils.formatDuration(groups[date].reduce((s, l) => s + l.durationMinutes, 0)),
+        isFriday: this.dateUtils.isFriday(date),
+        isSaturday: this.dateUtils.isSaturday(date)
+      }));
+  });
+
+  totalPages = computed(() => Math.ceil(this.groupedLogs().length / this.PAGE_SIZE));
+
+  pagedLogs = computed(() => {
+    const start = this.currentPage() * this.PAGE_SIZE;
+    return this.groupedLogs().slice(start, start + this.PAGE_SIZE);
+  });
+
+  totalLogsCount = computed(() => this.logs().length);
+
   ngOnInit(): void {
+    this.loadLogs();
+
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.isEditMode.set(true);
@@ -329,7 +691,24 @@ export class WorkLogFormComponent implements OnInit {
         hours,
         minutes
       });
+      if (log.details) {
+        this.showDetails.set(true);
+      }
     }
+  }
+
+  async loadLogs(range?: { startDate: string; endDate: string }): Promise<void> {
+    if (range) {
+      this.logs.set(await db.getLogsByRange(range.startDate, range.endDate));
+    } else {
+      const defaultRange = this.dateUtils.getDateRange('thisMonth');
+      this.logs.set(await db.getLogsByRange(defaultRange.startDate, defaultRange.endDate));
+    }
+  }
+
+  async onFilterChange(range: { startDate: string; endDate: string }): Promise<void> {
+    this.currentPage.set(0);
+    await this.loadLogs(range);
   }
 
   setDuration(minutes: number): void {
@@ -353,6 +732,25 @@ export class WorkLogFormComponent implements OnInit {
     return this.getTotalMinutes() % 60;
   }
 
+  cancelEdit(): void {
+    this.isEditMode.set(false);
+    this.logId.set(0);
+    this.resetForm();
+    this.router.navigate(['/work-log']);
+  }
+
+  resetForm(): void {
+    this.form.reset({
+      title: '',
+      details: '',
+      date: new Date(),
+      hours: 0,
+      minutes: 30
+    });
+    this.durationError.set('');
+    this.showDetails.set(false);
+  }
+
   async onSubmit(): Promise<void> {
     if (this.form.invalid) return;
 
@@ -374,15 +772,35 @@ export class WorkLogFormComponent implements OnInit {
           title, details, date: dateStr, durationMinutes: total
         });
         this.notify.success('Work log updated successfully');
+        this.isEditMode.set(false);
+        this.logId.set(0);
+        this.resetForm();
       } else {
         await db.createLog({
           title, details, date: dateStr, durationMinutes: total
         });
         this.notify.success('Work log added successfully');
+        this.resetForm();
       }
-      this.router.navigate(['/dashboard']);
+      await this.loadLogs();
     } catch {
       this.notify.error('Failed to save work log');
     }
+  }
+
+  formatShortDate(date: string): string {
+    return this.dateUtils.formatShortDate(date);
+  }
+
+  formatDuration(minutes: number): string {
+    return this.dateUtils.formatDuration(minutes);
+  }
+
+  prevPage(): void {
+    if (this.currentPage() > 0) this.currentPage.update(p => p - 1);
+  }
+
+  nextPage(): void {
+    if (this.currentPage() < this.totalPages() - 1) this.currentPage.update(p => p + 1);
   }
 }
