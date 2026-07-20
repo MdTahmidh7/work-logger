@@ -30,5 +30,6 @@ export interface BackupData {
   app: string;
   data: {
     workLogs: WorkLog[];
+    attendance?: any[];
   };
 }

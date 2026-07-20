@@ -123,11 +123,11 @@ import * as XLSX from 'xlsx';
             <div class="preview-body">
               <div class="preview-grid">
                 <div class="preview-stat">
-                  <span class="stat-num">{{ previewData()!.data.workLogs.length }}</span>
+                  <span class="stat-num">{{ previewData()!.data.workLogs?.length || 0 }}</span>
                   <span class="stat-desc">Work Logs</span>
                 </div>
                 <div class="preview-stat">
-                  <span class="stat-num">{{ previewData()!.data.attendance.length }}</span>
+                  <span class="stat-num">{{ previewData()!.data.attendance?.length || 0 }}</span>
                   <span class="stat-desc">Attendance Records</span>
                 </div>
                 <div class="preview-stat">
@@ -603,31 +603,37 @@ export class SettingsComponent {
       a.download = `worklog-backup-${new Date().toISOString().split('T')[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      this.notify.success('Backup exported successfully');
-    } catch {
-      this.notify.error('Failed to export backup');
+      const logCount = data.data?.workLogs?.length || 0;
+      const attCount = data.data?.attendance?.length || 0;
+      this.notify.success(`Backup exported: ${logCount} work logs, ${attCount} attendance records`);
+    } catch (e) {
+      console.error('Export error:', e);
+      this.notify.error('Failed to export backup: ' + (e instanceof Error ? e.message : 'Unknown error'));
     }
   }
 
   onFileSelected(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const data = JSON.parse(reader.result as string) as AttendanceBackupData;
-        if (!data.data?.workLogs && !data.data?.attendance) {
-          this.notify.error('Invalid backup file format');
+        const data = JSON.parse(reader.result as string);
+        if (!data?.data) {
+          this.notify.error('Invalid backup file: missing data field');
           return;
         }
         this.pendingData = data;
         this.previewData.set(data);
-      } catch {
-        this.notify.error('Invalid JSON file');
+      } catch (e) {
+        console.error('Parse error:', e);
+        this.notify.error('Failed to parse JSON file');
       }
     };
     reader.readAsText(file);
+    input.value = '';
   }
 
   async confirmImport(): Promise<void> {
@@ -641,17 +647,22 @@ export class SettingsComponent {
     );
     if (ok) {
       try {
-        if (this.pendingData.data.workLogs) {
-          await db.importLogs({ ...this.pendingData, data: { workLogs: this.pendingData.data.workLogs } } as any);
+        let importedWorkLogs = 0;
+        let importedAttendance = 0;
+
+        if (workLogCount > 0) {
+          importedWorkLogs = await db.importLogs(this.pendingData as any);
         }
-        if (this.pendingData.data.attendance) {
-          await this.attendanceService.importAttendance(this.pendingData);
+        if (attendanceCount > 0) {
+          importedAttendance = await this.attendanceService.importAttendance(this.pendingData);
         }
-        this.notify.success(`Imported ${workLogCount} work logs and ${attendanceCount} attendance records`);
+
+        this.notify.success(`Import complete: ${importedWorkLogs} work logs and ${importedAttendance} attendance records`);
         this.previewData.set(null);
         this.pendingData = null;
-      } catch {
-        this.notify.error('Failed to import data');
+      } catch (e) {
+        console.error('Import error:', e);
+        this.notify.error('Import failed: ' + (e instanceof Error ? e.message : 'Unknown error'));
       }
     }
   }
@@ -662,8 +673,13 @@ export class SettingsComponent {
       'This will permanently delete all your work logs and attendance records. This cannot be undone.'
     );
     if (ok) {
-      await db.clearAll();
-      this.notify.success('All data cleared');
+      try {
+        await db.clearAll();
+        this.notify.success('All data cleared successfully');
+      } catch (e) {
+        console.error('Clear error:', e);
+        this.notify.error('Failed to clear data: ' + (e instanceof Error ? e.message : 'Unknown error'));
+      }
     }
   }
 
