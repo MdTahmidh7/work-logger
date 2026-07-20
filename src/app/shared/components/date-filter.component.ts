@@ -9,54 +9,8 @@ import { DateFilterType } from '../../core/models/work-log.model';
   standalone: true,
   selector: 'app-date-filter',
   imports: [CommonModule, MatIconModule, MatButtonModule],
-  template: `
-    <div class="date-filter">
-      @for (filter of filters; track filter.value) {
-        <button class="filter-btn" [class.active]="selected() === filter.value"
-                (click)="select(filter.value)">
-          <mat-icon>{{ filter.icon }}</mat-icon>
-          <span>{{ filter.label }}</span>
-        </button>
-      }
-      <button class="filter-btn custom-btn" [class.active]="selected() === 'custom'"
-              (click)="showCustom.set(!showCustom())">
-        <mat-icon>tune</mat-icon>
-        <span>Custom</span>
-      </button>
-      @if (showCustom()) {
-        <div class="custom-range">
-          <input type="date" [value]="customStart()" (change)="onStartChange($event)" class="date-input">
-          <span class="range-sep">to</span>
-          <input type="date" [value]="customEnd()" (change)="onEndChange($event)" class="date-input">
-        </div>
-      }
-    </div>
-  `,
-  styles: [`
-    .date-filter { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-    .filter-btn {
-      display: flex; align-items: center; gap: 5px; padding: 8px 14px;
-      border-radius: 10px; border: 1px solid var(--pwl-divider);
-      background: var(--pwl-surface); color: var(--pwl-text-secondary);
-      font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;
-      font-family: 'Inter', sans-serif;
-    }
-    .filter-btn mat-icon { font-size: 16px; width: 16px; height: 16px; }
-    .filter-btn:hover { background: var(--pwl-surface-variant); color: var(--pwl-text-primary); }
-    .filter-btn.active { background: var(--pwl-primary-light); color: var(--pwl-primary); border-color: var(--pwl-primary); }
-
-    .custom-range {
-      display: flex; align-items: center; gap: 6px;
-      margin-left: 8px; padding: 4px 8px; background: var(--pwl-surface-variant);
-      border-radius: 10px;
-    }
-    .date-input {
-      border: 1px solid var(--pwl-divider); border-radius: 8px;
-      padding: 6px 10px; font-size: 13px; font-family: 'Inter', sans-serif;
-      background: var(--pwl-surface); color: var(--pwl-text-primary);
-    }
-    .range-sep { color: var(--pwl-text-tertiary); font-size: 13px; }
-  `]
+  templateUrl: './date-filter.component.html',
+  styleUrls: ['./date-filter.component.scss']
 })
 export class DateFilterComponent {
   rangeChange = output<{ startDate: string; endDate: string }>();

@@ -1,0 +1,51 @@
+    <div class="today-card">
+      <div class="card-header">
+        <div class="header-left">
+          <mat-icon class="header-icon">calendar_today</mat-icon>
+          <span class="card-title">Today's Attendance</span>
+        </div>
+        <div class="status-badge" [class]="statusClass()">
+          {{ statusLabel() }}
+        </div>
+      </div>
+
+      <div class="card-body">
+        <div class="info-row">
+          <div class="info-item">
+            <div class="info-icon punch-in-icon-bg">
+              <mat-icon>login</mat-icon>
+            </div>
+            <span class="info-label">First Punch In</span>
+            <span class="info-value punch-in-color">
+              @if (attendance()) {
+                {{ formatTime(attendance()!.firstPunchIn) }}
+              } @else {
+                --
+              }
+            </span>
+          </div>
+          <div class="info-divider"></div>
+          <div class="info-item">
+            <div class="info-icon punch-out-icon-bg">
+              <mat-icon>logout</mat-icon>
+            </div>
+            <span class="info-label">Last Punch Out</span>
+            <span class="info-value punch-out-color">
+              @if (attendance()?.lastPunchOut) {
+                {{ formatTime(attendance()!.lastPunchOut!) }}
+              } @else {
+                --
+              }
+            </span>
+          </div>
+          <div class="info-divider"></div>
+          <div class="info-item">
+            <div class="info-icon working-icon-bg">
+              <mat-icon>schedule</mat-icon>
+            </div>
+            <span class="info-label">Working Hour</span>
+            <span class="info-value working-color">{{ workingHours() }}</span>
+          </div>
+        </div>
+      </div>
+    </div>

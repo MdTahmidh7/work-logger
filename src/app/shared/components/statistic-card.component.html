@@ -1,23 +1,9 @@
-<mat-card class="statistic-card" [ngClass]="{'statistic-card--clickeable': data().onClick}'">
-  <mat-card-content>
-    <div class="statistic-content">
-      <div class="statistic-main">
-        <div class="statistic-icon">
-          <mat-icon [style.color]="data().iconColor">{{ data().icon }}</mat-icon>
-        </div>
-        <div class="statistic-info">
-          <h3 class="statistic-value">{{ formatValue(data().value) }}</h3>
-          <p class="statistic-label">{{ data().label }}</p>
-        </div>
-      </div>
-      
-      <div class="statistic-change" *ngIf="data().change !== undefined && data().change !== 0">
-        <mat-icon class="change-icon" [style.color]="changeColor()">trending_up</mat-icon>
-        <span class="change-value" [style.color]="changeColor()">
-          {{ data().change > 0 ? '+' : '' }}{{ data().change }}%
-        </span>
-        <span class="change-period">{{ data().trendValue }} {{ data().trendUnit }}</span>
-      </div>
+<div class="stat-card" [style.background]="data().cardBg || ''">
+  <div class="stat-header">
+    <div class="stat-icon" [style.background]="data().iconBg">
+      <mat-icon [style.color]="data().iconColor">{{ data().icon }}</mat-icon>
     </div>
-  </mat-card-content>
-</mat-card>
+  </div>
+  <div class="stat-value" [style.color]="data().valueColor || ''">{{ data().value }}</div>
+  <div class="stat-label">{{ data().label }}</div>
+</div>

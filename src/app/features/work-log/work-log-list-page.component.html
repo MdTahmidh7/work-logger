@@ -1,0 +1,60 @@
+    <div class="list-page">
+      <div class="page-header">
+        <div>
+          <h1>Work Logs</h1>
+          <p class="subtitle">{{ filteredLogs().length }} entries</p>
+        </div>
+        <a routerLink="/work-log" class="add-btn">
+          <mat-icon>add</mat-icon> Add Log
+        </a>
+      </div>
+
+      <app-date-filter (rangeChange)="onFilterChange($event)" />
+
+      <div class="log-list">
+        @for (group of groupedLogs(); track group.date) {
+          <div class="date-group" [class.friday]="group.isFriday" [class.saturday]="group.isSaturday">
+            <div class="date-header">
+              <div class="date-info">
+                <span class="day-name">{{ group.dayName }}</span>
+                <span class="date-text">{{ group.formattedDate }}</span>
+              </div>
+              <div class="date-summary">
+                <span class="total-hours">{{ group.totalHours }}h</span>
+                <span class="total-count">{{ group.logs.length }} tasks</span>
+              </div>
+            </div>
+            <div class="log-entries">
+              @for (log of group.logs; track log.id) {
+                <div class="log-entry">
+                  <div class="log-main">
+                    <div class="log-title">{{ log.title }}</div>
+                    @if (log.details) {
+                      <div class="log-details">{{ log.details }}</div>
+                    }
+                  </div>
+                  <div class="log-meta">
+                    <span class="duration">{{ formatDuration(log.durationMinutes) }}</span>
+                    <div class="log-actions">
+                      <a [routerLink]="['/edit', log.id]" mat-icon-button class="action-btn">
+                        <mat-icon>edit</mat-icon>
+                      </a>
+                      <button mat-icon-button class="action-btn delete-btn" (click)="deleteLog(log.id!)">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        } @empty {
+          <div class="empty-state">
+            <mat-icon>work_off</mat-icon>
+            <h3>No logs found</h3>
+            <p>No work logs for this period. Add your first entry!</p>
+            <a routerLink="/work-log" class="add-btn"><mat-icon>add</mat-icon> Add Work Log</a>
+          </div>
+        }
+      </div>
+    </div>

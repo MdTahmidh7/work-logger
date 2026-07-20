@@ -1,3 +1,5 @@
+import { Route } from '@angular/router';
+
 export interface RouteConfig {
   path: string;
   title: string;
@@ -5,5 +7,5 @@ export interface RouteConfig {
 }
 
 export interface AppRoutes {
-  routes: any[];
+  routes: Route[];
 }

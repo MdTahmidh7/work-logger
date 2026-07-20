@@ -1,0 +1,155 @@
+    <div class="dashboard-wrapper">
+      <div class="dashboard">
+        <div class="top-bar">
+          <a routerLink="/attendance/history" class="history-btn">
+            <mat-icon>history</mat-icon>
+            Full History
+          </a>
+        </div>
+
+        <div class="main-content">
+          <div
+            class="action-section"
+            [class.bg-punch-in]="!todayAttendance()"
+            [class.bg-punch-out]="todayAttendance()"
+          >
+            <app-attendance-action-button
+              [attendance]="todayAttendance()"
+              (action)="handleAction()"
+            />
+          </div>
+          <div class="card-section">
+            <app-today-attendance-card [attendance]="todayAttendance()" />
+          </div>
+        </div>
+
+        <div class="recent-section">
+          <div class="section-header">
+            <div class="header-left">
+              <mat-icon>calendar_today</mat-icon>
+              <h2>Attendance History</h2>
+            </div>
+            <div class="date-range-filter">
+              <div class="range-input">
+                <mat-icon>event</mat-icon>
+                <input
+                  type="date"
+                  [value]="filterStart()"
+                  [max]="filterEnd()"
+                  (change)="onFilterStartChange($event)"
+                  class="date-input"
+                />
+              </div>
+              <span class="range-sep">to</span>
+              <div class="range-input">
+                <mat-icon>event</mat-icon>
+                <input
+                  type="date"
+                  [value]="filterEnd()"
+                  [max]="maxDate()"
+                  (change)="onFilterEndChange($event)"
+                  class="date-input"
+                />
+              </div>
+              <span class="days-info">{{ dayRows().length }} days</span>
+            </div>
+          </div>
+          <div class="attendance-table">
+            <div class="table-header">
+              <div class="th col-date">DATE</div>
+              <div class="th col-day">DAY</div>
+              <div class="th col-punch-in">PUNCH IN</div>
+              <div class="th col-punch-out">PUNCH OUT</div>
+              <div class="th col-hours">WORKING HOUR</div>
+              <div class="th col-logged">TOTAL LOGGED</div>
+              <div class="th col-status">STATUS</div>
+              <div class="th col-edit">ACTIONS</div>
+            </div>
+            @for (row of dayRows(); track row.date) {
+              <div
+                class="table-row"
+                [class.status-present]="
+                  row.attendance && row.getStatus() === 'Present'
+                "
+                [class.status-nfoh]="
+                  row.attendance && row.getStatus() === 'NFOH'
+                "
+                [class.status-absent]="!row.attendance"
+                [class.friday]="row.isFriday"
+                [class.saturday]="row.isSaturday"
+                [class.today]="row.isToday"
+              >
+                <div class="td col-date">
+                  <div
+                    class="status-dot"
+                    [class.dot-present]="
+                      row.attendance && row.getStatus() === 'Present'
+                    "
+                    [class.dot-nfoh]="
+                      row.attendance && row.getStatus() === 'NFOH'
+                    "
+                    [class.dot-absent]="!row.attendance"
+                  ></div>
+                  <span class="date-text">{{ formatDate(row.date) }}</span>
+                </div>
+                <div class="td col-day">{{ row.dayName }}</div>
+                <div class="td col-punch-in">
+                  @if (row.attendance) {
+                    <mat-icon class="cell-icon punch-in-icon">login</mat-icon>
+                    <span>{{ formatTime(row.attendance.firstPunchIn) }}</span>
+                  } @else {
+                    <span class="no-data">--</span>
+                  }
+                </div>
+                <div class="td col-punch-out">
+                  @if (row.attendance?.lastPunchOut) {
+                    <mat-icon class="cell-icon punch-out-icon">logout</mat-icon>
+                    <span>{{ formatTime(row.attendance!.lastPunchOut!) }}</span>
+                  } @else {
+                    <span class="no-data">--</span>
+                  }
+                </div>
+                <div class="td col-hours">
+                  @if (row.attendance && row.attendance.workingMinutes > 0) {
+                    <span class="hours-badge">{{
+                      formatWorkingHours(row.attendance.workingMinutes)
+                    }}</span>
+                  } @else {
+                    <span class="no-data">--</span>
+                  }
+                </div>
+                <div class="td col-logged">
+                  @if (row.totalLoggedMinutes > 0) {
+                    <span class="logged-badge">{{
+                      formatWorkingHours(row.totalLoggedMinutes)
+                    }}</span>
+                  } @else {
+                    <a [routerLink]="['/work-log']" [queryParams]="{ date: row.date }" class="add-log-btn">
+                      <mat-icon>add</mat-icon>
+                    </a>
+                  }
+                </div>
+                <div class="td col-status">
+                  <span
+                    class="status-badge"
+                    [class.badge-present]="row.getStatus() === 'Present'"
+                    [class.badge-nfoh]="row.getStatus() === 'NFOH'"
+                    [class.badge-absent]="row.getStatus() === 'Absent'"
+                  >
+                    {{ row.getStatus() }}
+                  </span>
+                </div>
+                <div class="td col-edit">
+                  <a
+                    [routerLink]="['/attendance/edit', row.date]"
+                    class="edit-link"
+                  >
+                    <mat-icon class="edit-icon">edit</mat-icon>
+                  </a>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>

@@ -1,0 +1,10 @@
+main {
+  min-height: 100vh;
+  padding: 0 24px 32px;
+}
+
+@media (max-width: 768px) {
+  main {
+    padding: 0 12px 20px;
+  }
+}
