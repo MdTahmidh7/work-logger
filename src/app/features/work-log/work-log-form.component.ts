@@ -10,6 +10,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { DateFilterComponent } from '../../shared/components/date-filter.component';
 import { db } from '../../core/database/database.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
 import { DateUtilsService } from '../../core/services/date-utils.service';
 import { WorkLog } from '../../core/models/work-log.model';
 
@@ -128,7 +129,7 @@ import { WorkLog } from '../../core/models/work-log.model';
                 <div class="th">Day</div>
                 <div class="th">Task</div>
                 <div class="th">Duration</div>
-                <div class="th"></div>
+                <div class="th actions-th"></div>
               </div>
               @for (item of pagedLogs(); track item.log.id) {
                 <div class="table-row"
@@ -159,6 +160,9 @@ import { WorkLog } from '../../core/models/work-log.model';
                   <div class="td actions-cell">
                     <a (click)="editLog(item.log.id!)" class="edit-link" matTooltip="Edit log">
                       <mat-icon class="edit-icon">edit</mat-icon>
+                    </a>
+                    <a (click)="deleteLog(item.log)" class="delete-link" matTooltip="Delete log">
+                      <mat-icon class="delete-icon">delete</mat-icon>
                     </a>
                   </div>
                 </div>
@@ -584,16 +588,27 @@ import { WorkLog } from '../../core/models/work-log.model';
       background: var(--pwl-primary-light); color: var(--pwl-primary);
     }
 
-    .actions-cell { display: flex; justify-content: center; align-items: center; }
+    .actions-cell { display: flex; justify-content: flex-end; align-items: center; gap: 2px; }
+
+    .actions-th { text-align: right; }
 
     .edit-link {
       display: flex; align-items: center; justify-content: center;
       width: 28px; height: 28px; border-radius: 6px;
       color: var(--pwl-text-secondary); transition: all 0.15s;
-      text-decoration: none;
+      text-decoration: none; cursor: pointer;
     }
     .edit-link:hover { background: var(--pwl-primary-light); color: var(--pwl-primary); }
     .edit-icon { font-size: 16px; width: 16px; height: 16px; }
+
+    .delete-link {
+      display: flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; border-radius: 6px;
+      color: var(--pwl-text-secondary); transition: all 0.15s;
+      text-decoration: none; cursor: pointer;
+    }
+    .delete-link:hover { background: rgba(255, 59, 48, 0.1); color: var(--pwl-danger); }
+    .delete-icon { font-size: 16px; width: 16px; height: 16px; }
 
     .pagination {
       display: flex; align-items: center; justify-content: center; gap: 6px;
@@ -623,6 +638,7 @@ export class WorkLogFormComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private notify = inject(NotificationService);
+  private confirm = inject(ConfirmDialogService);
   private dateUtils = inject(DateUtilsService);
 
   isEditMode = signal(false);
@@ -752,6 +768,23 @@ export class WorkLogFormComponent implements OnInit {
 
   editLog(id: number): void {
     this.router.navigate(['/edit', id]);
+  }
+
+  async deleteLog(log: WorkLog): Promise<void> {
+    const ok = await this.confirm.confirm(
+      'Delete Log',
+      `Are you sure you want to delete "${log.title}"? This cannot be undone.`
+    );
+    if (ok) {
+      try {
+        await db.deleteLog(log.id!);
+        this.notify.success('Log deleted successfully');
+        await this.loadLogs();
+      } catch (e) {
+        console.error('Delete error:', e);
+        this.notify.error('Failed to delete log');
+      }
+    }
   }
 
   resetForm(): void {

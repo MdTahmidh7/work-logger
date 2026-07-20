@@ -141,7 +141,6 @@ import { AttendanceService } from '../attendance/services/attendance.service';
                 <div class="th">Task Items</div>
                 <div class="th">Log Hours</div>
                 <div class="th">Total Hours</div>
-                <div class="th"></div>
               </div>
               @for (group of pagedLogs(); track group.date) {
                 <div class="table-row"
@@ -164,11 +163,6 @@ import { AttendanceService } from '../attendance/services/attendance.service';
                     <span class="total-badge" [class.friday-badge]="group.isFriday" [class.saturday-badge]="group.isSaturday">
                       {{ group.totalHours }}
                     </span>
-                  </div>
-                  <div class="td actions-cell">
-                    <a [routerLink]="['/edit', group.logs[0].id]" class="edit-link">
-                      <mat-icon class="edit-icon">edit</mat-icon>
-                    </a>
                   </div>
                 </div>
               }
@@ -341,7 +335,7 @@ import { AttendanceService } from '../attendance/services/attendance.service';
 
     .table-header {
       display: grid;
-      grid-template-columns: 90px 80px 1fr 90px 90px 40px;
+      grid-template-columns: 90px 80px 1fr 90px 90px;
       padding: 10px 20px;
       border-bottom: 1px solid var(--pwl-divider);
       background: var(--pwl-surface-variant);
@@ -357,7 +351,7 @@ import { AttendanceService } from '../attendance/services/attendance.service';
 
     .table-row {
       display: grid;
-      grid-template-columns: 90px 80px 1fr 90px 90px 40px;
+      grid-template-columns: 90px 80px 1fr 90px 90px;
       padding: 10px 20px;
       border-bottom: 1px solid var(--pwl-divider);
       align-items: center;
@@ -401,17 +395,6 @@ import { AttendanceService } from '../attendance/services/attendance.service';
     }
     .total-badge.friday-badge { background: rgba(255, 204, 0, 0.15); color: #b38600; }
     .total-badge.saturday-badge { background: rgba(255, 107, 107, 0.15); color: #cc3333; }
-
-    .actions-cell { display: flex; justify-content: center; align-items: center; }
-
-    .edit-link {
-      display: flex; align-items: center; justify-content: center;
-      width: 32px; height: 32px; border-radius: 8px;
-      color: var(--pwl-text-secondary); transition: all 0.2s;
-      text-decoration: none;
-    }
-    .edit-link:hover { background: var(--pwl-primary-light); color: var(--pwl-primary); }
-    .edit-icon { font-size: 18px; width: 18px; height: 18px; }
 
     .pagination {
       display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -458,7 +441,7 @@ import { AttendanceService } from '../attendance/services/attendance.service';
     @media (max-width: 768px) {
       .attendance-section { grid-template-columns: 1fr; }
       .table-header, .table-row {
-        grid-template-columns: 70px 60px 1fr 70px 70px 36px;
+        grid-template-columns: 70px 60px 1fr 70px 70px;
         padding: 8px 14px;
       }
       .fab-button { bottom: 20px; right: 20px; width: 50px; height: 50px; }
