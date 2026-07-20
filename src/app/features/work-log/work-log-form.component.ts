@@ -105,7 +105,7 @@ import { WorkLog } from '../../core/models/work-log.model';
           <div class="list-header">
             <div class="list-title-group">
               <h2>Work Logs</h2>
-              <span class="log-count">{{ groupedLogs().length }} days &middot; {{ totalLogsCount() }} logs</span>
+              <span class="log-count">{{ flatLogs().length }} logs</span>
             </div>
           </div>
 
@@ -113,7 +113,7 @@ import { WorkLog } from '../../core/models/work-log.model';
             <app-date-filter (rangeChange)="onFilterChange($event)" />
           </div>
 
-          @if (groupedLogs().length === 0) {
+          @if (flatLogs().length === 0) {
             <div class="empty-state">
               <div class="empty-icon">
                 <mat-icon>folder_open</mat-icon>
@@ -122,39 +122,42 @@ import { WorkLog } from '../../core/models/work-log.model';
               <p>No work logs match your current filter.</p>
             </div>
           } @else {
-            <div class="activity-table">
+            <div class="log-table">
               <div class="table-header">
                 <div class="th">Date</div>
                 <div class="th">Day</div>
-                <div class="th">Task Items</div>
-                <div class="th">Log Hours</div>
-                <div class="th">Total</div>
+                <div class="th">Task</div>
+                <div class="th">Duration</div>
                 <div class="th"></div>
               </div>
-              @for (group of pagedLogs(); track group.date) {
+              @for (item of pagedLogs(); track item.log.id) {
                 <div class="table-row"
-                     [class.friday]="group.isFriday"
-                     [class.saturday]="group.isSaturday"
-                     [class.workday]="!group.isFriday && !group.isSaturday">
-                  <div class="td">{{ formatShortDate(group.date) }}</div>
-                  <div class="td day-cell" [class.holiday]="group.isFriday || group.isSaturday">{{ group.dayName }}</div>
-                  <div class="td tasks-cell">
-                    @for (log of group.logs; track log.id) {
-                      <div class="task-item">{{ log.title }}</div>
+                     [class.friday]="item.isFriday"
+                     [class.saturday]="item.isSaturday"
+                     [class.workday]="!item.isFriday && !item.isSaturday"
+                     [class.first-of-day]="item.isFirstOfDay"
+                     [class.day-continuation]="!item.isFirstOfDay">
+                  <div class="td date-cell">
+                    @if (item.isFirstOfDay) {
+                      <span class="date-text">{{ item.dateFormatted }}</span>
                     }
                   </div>
-                  <div class="td hours-cell">
-                    @for (log of group.logs; track log.id) {
-                      <div class="hour-item">{{ formatDuration(log.durationMinutes) }}</div>
+                  <div class="td day-cell" [class.holiday]="item.isFriday || item.isSaturday">
+                    @if (item.isFirstOfDay) {
+                      {{ item.dayName }}
                     }
                   </div>
-                  <div class="td total-cell">
-                    <span class="total-badge" [class.friday-badge]="group.isFriday" [class.saturday-badge]="group.isSaturday">
-                      {{ group.totalHours }}
-                    </span>
+                  <div class="td title-cell">
+                    <div class="title-text">{{ item.log.title }}</div>
+                    @if (item.log.details) {
+                      <div class="details-text">{{ item.log.details }}</div>
+                    }
+                  </div>
+                  <div class="td duration-cell">
+                    <span class="duration-badge">{{ formatDuration(item.log.durationMinutes) }}</span>
                   </div>
                   <div class="td actions-cell">
-                    <a [routerLink]="['/edit', group.logs[0].id]" class="edit-link" matTooltip="Edit log">
+                    <a (click)="editLog(item.log.id!)" class="edit-link" matTooltip="Edit log">
                       <mat-icon class="edit-icon">edit</mat-icon>
                     </a>
                   </div>
@@ -507,11 +510,11 @@ import { WorkLog } from '../../core/models/work-log.model';
       margin: 0;
     }
 
-    .activity-table { width: 100%; }
+    .log-table { width: 100%; }
 
     .table-header {
       display: grid;
-      grid-template-columns: 90px 80px 1fr 90px 80px 40px;
+      grid-template-columns: 100px 90px 1fr 80px 40px;
       padding: 8px 20px;
       border-bottom: 1px solid var(--pwl-divider);
       background: var(--pwl-surface-variant);
@@ -527,11 +530,11 @@ import { WorkLog } from '../../core/models/work-log.model';
 
     .table-row {
       display: grid;
-      grid-template-columns: 90px 80px 1fr 90px 80px 40px;
-      padding: 8px 20px;
+      grid-template-columns: 100px 90px 1fr 80px 40px;
+      padding: 10px 20px;
       border-bottom: 1px solid var(--pwl-divider);
       align-items: center;
-      transition: background 0.2s;
+      transition: background 0.15s;
     }
 
     .table-row:last-child { border-bottom: none; }
@@ -539,38 +542,47 @@ import { WorkLog } from '../../core/models/work-log.model';
 
     .table-row.workday { background: rgba(13, 148, 136, 0.04); }
     .table-row.workday:hover { background: rgba(13, 148, 136, 0.08); }
+    .table-row.workday.first-of-day { background: rgba(13, 148, 136, 0.06); }
+    .table-row.workday.day-continuation { background: rgba(13, 148, 136, 0.02); }
 
     .table-row.friday { background: rgba(255, 204, 0, 0.06); }
     .table-row.friday:hover { background: rgba(255, 204, 0, 0.12); }
+    .table-row.friday.first-of-day { background: rgba(255, 204, 0, 0.08); }
+    .table-row.friday.day-continuation { background: rgba(255, 204, 0, 0.03); }
 
     .table-row.saturday { background: rgba(255, 107, 107, 0.06); }
     .table-row.saturday:hover { background: rgba(255, 107, 107, 0.12); }
+    .table-row.saturday.first-of-day { background: rgba(255, 107, 107, 0.08); }
+    .table-row.saturday.day-continuation { background: rgba(255, 107, 107, 0.03); }
 
     .td { font-size: 12px; color: var(--pwl-text-primary); }
+
+    .date-cell { font-weight: 500; }
+    .date-text { font-size: 12px; }
 
     .day-cell { color: var(--pwl-text-secondary); font-size: 11px; }
     .day-cell.holiday { font-weight: 600; }
 
-    .tasks-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .title-cell { min-width: 0; }
 
-    .task-item {
-      font-size: 12px; font-weight: 500; color: var(--pwl-text-primary);
+    .title-text {
+      font-size: 13px; font-weight: 500; color: var(--pwl-text-primary);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
 
-    .hours-cell { display: flex; flex-direction: column; gap: 2px; }
+    .details-text {
+      font-size: 11px; color: var(--pwl-text-tertiary);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      margin-top: 1px;
+    }
 
-    .hour-item { font-size: 11px; color: var(--pwl-text-secondary); }
+    .duration-cell { text-align: center; }
 
-    .total-cell { text-align: center; }
-
-    .total-badge {
-      display: inline-block; padding: 2px 6px; border-radius: 5px;
+    .duration-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 5px;
       font-size: 11px; font-weight: 600;
       background: var(--pwl-primary-light); color: var(--pwl-primary);
     }
-    .total-badge.friday-badge { background: rgba(255, 204, 0, 0.15); color: #b38600; }
-    .total-badge.saturday-badge { background: rgba(255, 107, 107, 0.15); color: #cc3333; }
 
     .actions-cell { display: flex; justify-content: center; align-items: center; }
 
@@ -598,8 +610,8 @@ import { WorkLog } from '../../core/models/work-log.model';
       .bottom-row { flex-direction: column; align-items: stretch; }
       .submit-row { justify-content: flex-end; }
       .table-header, .table-row {
-        grid-template-columns: 70px 60px 1fr 70px 70px 36px;
-        padding: 6px 14px;
+        grid-template-columns: 80px 70px 1fr 70px 36px;
+        padding: 8px 14px;
       }
       .list-header { padding: 12px 14px; }
       .filter-bar { padding: 8px 14px; }
@@ -633,30 +645,29 @@ export class WorkLogFormComponent implements OnInit {
     minutes: [30, [Validators.min(0), Validators.max(59)]]
   });
 
-  groupedLogs = computed(() => {
+  flatLogs = computed(() => {
     const logs = this.logs();
-    const groups: { [key: string]: WorkLog[] } = {};
-    for (const log of logs) {
-      if (!groups[log.date]) groups[log.date] = [];
-      groups[log.date].push(log);
-    }
-    return Object.keys(groups)
-      .sort((a, b) => b.localeCompare(a))
-      .map(date => ({
-        date,
-        logs: groups[date],
-        dayName: this.dateUtils.getDayName(date),
-        totalHours: this.dateUtils.formatDuration(groups[date].reduce((s, l) => s + l.durationMinutes, 0)),
-        isFriday: this.dateUtils.isFriday(date),
-        isSaturday: this.dateUtils.isSaturday(date)
-      }));
+    const sorted = [...logs].sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt));
+    let lastDate = '';
+    return sorted.map(log => {
+      const isFirstOfDay = log.date !== lastDate;
+      lastDate = log.date;
+      return {
+        log,
+        isFirstOfDay,
+        dayName: isFirstOfDay ? this.dateUtils.getDayName(log.date) : '',
+        dateFormatted: isFirstOfDay ? this.dateUtils.formatShortDate(log.date) : '',
+        isFriday: this.dateUtils.isFriday(log.date),
+        isSaturday: this.dateUtils.isSaturday(log.date)
+      };
+    });
   });
 
-  totalPages = computed(() => Math.ceil(this.groupedLogs().length / this.PAGE_SIZE));
+  totalPages = computed(() => Math.ceil(this.flatLogs().length / this.PAGE_SIZE));
 
   pagedLogs = computed(() => {
     const start = this.currentPage() * this.PAGE_SIZE;
-    return this.groupedLogs().slice(start, start + this.PAGE_SIZE);
+    return this.flatLogs().slice(start, start + this.PAGE_SIZE);
   });
 
   totalLogsCount = computed(() => this.logs().length);
@@ -739,6 +750,10 @@ export class WorkLogFormComponent implements OnInit {
     this.router.navigate(['/work-log']);
   }
 
+  editLog(id: number): void {
+    this.router.navigate(['/edit', id]);
+  }
+
   resetForm(): void {
     this.form.reset({
       title: '',
@@ -775,6 +790,7 @@ export class WorkLogFormComponent implements OnInit {
         this.isEditMode.set(false);
         this.logId.set(0);
         this.resetForm();
+        this.router.navigate(['/work-log']);
       } else {
         await db.createLog({
           title, details, date: dateStr, durationMinutes: total

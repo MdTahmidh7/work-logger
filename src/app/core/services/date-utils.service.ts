@@ -21,13 +21,13 @@ export class DateUtilsService {
       }
 
       case 'thisWeek': {
-        const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+        const weekStart = startOfWeek(now, { weekStartsOn: 0 });
         return { startDate: format(weekStart, 'yyyy-MM-dd'), endDate: format(now, 'yyyy-MM-dd') };
       }
 
       case 'lastWeek': {
-        const lastWeekEnd = subDays(startOfWeek(now, { weekStartsOn: 1 }), 1);
-        const lastWeekStart = startOfWeek(lastWeekEnd, { weekStartsOn: 1 });
+        const lastWeekEnd = subDays(startOfWeek(now, { weekStartsOn: 0 }), 1);
+        const lastWeekStart = startOfWeek(lastWeekEnd, { weekStartsOn: 0 });
         return { startDate: format(lastWeekStart, 'yyyy-MM-dd'), endDate: format(lastWeekEnd, 'yyyy-MM-dd') };
       }
 
