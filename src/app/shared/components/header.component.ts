@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   standalone: true,
@@ -13,6 +14,9 @@ import { MatButtonModule } from '@angular/material/button';
 })
 export class HeaderComponent {
   isDark = signal(false);
+  private authService = inject(AuthService);
+
+  userEmail = signal('');
 
   constructor() {
     const saved = localStorage.getItem('theme');
@@ -20,6 +24,12 @@ export class HeaderComponent {
       this.isDark.set(true);
       document.documentElement.setAttribute('data-theme', 'dark');
     }
+
+    this.authService.currentUser$.subscribe(user => {
+      if (user?.email) {
+        this.userEmail.set(user.email);
+      }
+    });
   }
 
   toggleTheme(): void {
@@ -27,5 +37,9 @@ export class HeaderComponent {
     const theme = this.isDark() ? 'dark' : 'light';
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
+  }
+
+  async logout(): Promise<void> {
+    await this.authService.signOut();
   }
 }

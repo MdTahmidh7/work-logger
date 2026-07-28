@@ -2,7 +2,8 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main, feature/code-refactor]
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -10,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: "pages"
   cancel-in-progress: false
 
 jobs:
@@ -23,17 +24,32 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
+          node-version: "20"
+          cache: "npm"
 
       - name: Install dependencies
-        run: npm install --force
+        run: npm ci
+
+      - name: Create environment files from secrets
+        run: |
+          cat > src/environments/environment.ts <<'EOF'
+          export const environment = {
+            production: false,
+            supabaseUrl: '${{ secrets.SUPABASE_URL }}',
+            supabaseAnonKey: '${{ secrets.SUPABASE_ANON_KEY }}',
+          };
+          EOF
+
+          cat > src/environments/environment.prod.ts <<'EOF'
+          export const environment = {
+            production: true,
+            supabaseUrl: '${{ secrets.SUPABASE_URL }}',
+            supabaseAnonKey: '${{ secrets.SUPABASE_ANON_KEY }}',
+          };
+          EOF
 
       - name: Build
-        run: npm run build -- --configuration production --base-href /work-logger/
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
+        run: npx ng build --configuration production-github-pages
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

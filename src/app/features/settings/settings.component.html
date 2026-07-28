@@ -5,6 +5,39 @@
           <p class="subtitle">Manage your data, exports, and preferences</p>
         </div>
 
+        @if (hasLocalData()) {
+          <div class="migration-section">
+            <div class="section-label">
+              <mat-icon>sync</mat-icon>
+              <span>Migrate Local Data</span>
+            </div>
+            <div class="setting-card migration-card">
+              <div class="card-icon migrate-icon">
+                <mat-icon>cloud_upload</mat-icon>
+              </div>
+              <div class="card-content">
+                <h3>Import Browser Data to Cloud</h3>
+                <p>You have {{ localCounts().workLogs }} work logs and {{ localCounts().attendance }} attendance records stored locally in your browser. Migrate them to the cloud to access from any device.</p>
+                <div class="migration-actions">
+                  <button class="action-btn migrate-btn" (click)="migrateData()" [disabled]="migrating()">
+                    @if (migrating()) {
+                      <mat-icon class="spinner">sync</mat-icon>
+                      Migrating...
+                    } @else {
+                      <mat-icon>cloud_upload</mat-icon>
+                      Migrate to Cloud
+                    }
+                  </button>
+                  <button class="action-btn clear-local-btn" (click)="clearLocalData()">
+                    <mat-icon>delete_outline</mat-icon>
+                    Discard Local Data
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+
         <div class="section-label">
           <mat-icon>download</mat-icon>
           <span>Export to Excel</span>

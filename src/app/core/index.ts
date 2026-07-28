@@ -4,3 +4,7 @@ export * from './utils/format.utils';
 export * from './constants/app.constants';
 export * from './repositories/work-log.repository';
 export * from './repositories/attendance.repository';
+export * from './services/supabase.service';
+export * from './services/auth.service';
+export * from './services/data-migration.service';
+export * from './guards/auth.guard';

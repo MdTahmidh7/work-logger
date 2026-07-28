@@ -30,8 +30,12 @@
   </nav>
 
   <div class="header-right">
+    <span class="user-email">{{ userEmail() }}</span>
     <button mat-icon-button class="theme-toggle" (click)="toggleTheme()">
       <mat-icon>{{ isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+    </button>
+    <button mat-icon-button class="logout-btn" (click)="logout()" matTooltip="Sign out">
+      <mat-icon>logout</mat-icon>
     </button>
   </div>
 </header>

@@ -1,11 +1,13 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
 import { WorkLogService } from '../work-log/services/work-log.service';
 import { AttendanceService } from '../attendance/services/attendance.service';
 import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { DateUtilsService } from '../../core/services/date-utils.service';
+import { DataMigrationService } from '../../core/services/data-migration.service';
 import { AttendanceBackupData } from '../attendance/models/attendance.model';
 import { WorkLog, BackupData } from '../../core/models/work-log.model';
 import { formatTime, formatWorkingHoursHM } from '../../core/utils/format.utils';
@@ -15,16 +17,70 @@ import * as XLSX from 'xlsx';
 @Component({
   standalone: true,
   selector: 'app-settings',
-  imports: [CommonModule, MatIconModule],
+  imports: [CommonModule, MatIconModule, MatButtonModule],
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.scss']
 })
-export class SettingsComponent {
+export class SettingsComponent implements OnInit {
   private confirm = inject(ConfirmDialogService);
   private notify = inject(NotificationService);
   private attendanceService = inject(AttendanceService);
   private workLogService = inject(WorkLogService);
   private dateUtils = inject(DateUtilsService);
+  private migrationService = inject(DataMigrationService);
+
+  hasLocalData = signal(false);
+  localCounts = signal({ workLogs: 0, attendance: 0 });
+  migrating = signal(false);
+
+  ngOnInit(): void {
+    this.checkLocalData();
+  }
+
+  async checkLocalData(): Promise<void> {
+    const hasData = await this.migrationService.hasLocalData();
+    this.hasLocalData.set(hasData);
+    if (hasData) {
+      this.localCounts.set(await this.migrationService.getLocalDataCounts());
+    }
+  }
+
+  async migrateData(): Promise<void> {
+    const counts = this.localCounts();
+    const total = counts.workLogs + counts.attendance;
+    const ok = await this.confirm.confirm(
+      'Migrate Local Data',
+      `This will import ${counts.workLogs} work logs and ${counts.attendance} attendance records from your browser's local storage to the cloud. Your existing cloud data will not be affected. Continue?`
+    );
+    if (!ok) return;
+
+    this.migrating.set(true);
+    try {
+      const result = await this.migrationService.migrateToCloud();
+      if (result.errors.length > 0) {
+        this.notify.warning(`Migration completed with some errors: ${result.errors.join(', ')}`);
+      } else {
+        this.notify.success(`Migrated ${result.workLogsImported} work logs and ${result.attendanceImported} attendance records to the cloud!`);
+      }
+      await this.checkLocalData();
+    } catch (e) {
+      this.notify.error('Migration failed: ' + (e instanceof Error ? e.message : 'Unknown error'));
+    } finally {
+      this.migrating.set(false);
+    }
+  }
+
+  async clearLocalData(): Promise<void> {
+    const ok = await this.confirm.confirm(
+      'Clear Local Data',
+      'This will permanently delete all data stored in your browser. Your cloud data is safe. Continue?'
+    );
+    if (ok) {
+      await this.migrationService.clearLocalData();
+      this.notify.success('Local data cleared');
+      await this.checkLocalData();
+    }
+  }
 
   previewData = signal<AttendanceBackupData | null>(null);
   private pendingData: AttendanceBackupData | null = null;

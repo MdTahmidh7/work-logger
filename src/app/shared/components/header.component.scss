@@ -89,8 +89,22 @@
   gap: 8px;
 }
 
-.theme-toggle {
+.user-email {
+  font-size: 13px;
   color: var(--pwl-text-secondary);
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theme-toggle,
+.logout-btn {
+  color: var(--pwl-text-secondary);
+}
+
+.logout-btn:hover {
+  color: #d32f2f;
 }
 
 @media (max-width: 768px) {
