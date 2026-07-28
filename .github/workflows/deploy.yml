@@ -25,14 +25,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: Create environment files from secrets
         run: |
-          cat > src/environments/environment.ts <<'EOF'
+          cat > src/environments/environment.ts <<EOF
           export const environment = {
             production: false,
             supabaseUrl: '${{ secrets.SUPABASE_URL }}',
@@ -40,7 +39,7 @@ jobs:
           };
           EOF
 
-          cat > src/environments/environment.prod.ts <<'EOF'
+          cat > src/environments/environment.prod.ts <<EOF
           export const environment = {
             production: true,
             supabaseUrl: '${{ secrets.SUPABASE_URL }}',
