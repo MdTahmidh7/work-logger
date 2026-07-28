@@ -43,6 +43,7 @@ export class WorkLogListPageComponent implements OnInit {
         dayName: this.dateUtils.getDayName(date),
         formattedDate: this.dateUtils.formatDate(date),
         totalHours: (groups[date].reduce((s, l) => s + l.durationMinutes, 0) / 60).toFixed(1),
+        totalMinutes: groups[date].reduce((s, l) => s + l.durationMinutes, 0),
         isFriday: this.dateUtils.isFriday(date),
         isSaturday: this.dateUtils.isSaturday(date)
       }));

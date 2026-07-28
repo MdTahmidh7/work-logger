@@ -146,37 +146,41 @@
             } @else {
               <div class="activity-cards">
                 @for (group of pagedLogs(); track group.date) {
-                  <div class="activity-card"
-                       [class.friday]="group.isFriday"
-                       [class.saturday]="group.isSaturday"
-                       [class.workday]="!group.isFriday && !group.isSaturday">
-                    <div class="activity-card-header">
-                      <div class="activity-card-date">
-                        <b>Date:</b> <span>{{ formatShortDate(group.date) }}</span>
+                  <div class="m-card"
+                       [class.m-friday]="group.isFriday"
+                       [class.m-saturday]="group.isSaturday">
+                    <div class="m-card-header">
+                      <div class="m-cal-icon">
+                        <mat-icon>calendar_today</mat-icon>
                       </div>
-                      <span class="total-badge" [class.friday-badge]="group.isFriday" [class.saturday-badge]="group.isSaturday">
+                      <span class="m-date">{{ formatShortDate(group.date) }}</span>
+                      <span class="m-day-pill">{{ group.dayName }}</span>
+                      <span class="m-total-badge">
+                        <mat-icon class="m-badge-icon">schedule</mat-icon>
                         {{ group.totalHours }}
                       </span>
+                      <button class="m-menu-btn">
+                        <mat-icon>more_vert</mat-icon>
+                      </button>
                     </div>
-                    <div class="activity-card-row">
-                      <b>Day:</b>
-                      <span [class.holiday]="group.isFriday || group.isSaturday">{{ group.dayName }}</span>
+
+                    <div class="m-tasks">
+                      @for (log of group.logs; track log.id) {
+                        <div class="m-task">
+                          <div class="m-task-dot"></div>
+                          <span class="m-task-title">{{ log.title }}</span>
+                          <span class="m-task-duration">
+                            <mat-icon class="m-task-clock">schedule</mat-icon>
+                            {{ formatDuration(log.durationMinutes) }}
+                          </span>
+                        </div>
+                      }
                     </div>
-                    <div class="activity-card-row">
-                      <b>Tasks:</b>
-                      <div class="activity-tasks">
-                        @for (log of group.logs; track log.id) {
-                          <span class="activity-task-chip">{{ log.title }}</span>
-                        }
-                      </div>
-                    </div>
-                    <div class="activity-card-row">
-                      <b>Hours:</b>
-                      <div class="activity-hours">
-                        @for (log of group.logs; track log.id) {
-                          <span class="activity-hour-chip">{{ formatDuration(log.durationMinutes) }}</span>
-                        }
-                      </div>
+
+                    <div class="m-card-footer">
+                      <a [routerLink]="['/edit', group.logs[0].id]" class="m-edit-btn">
+                        <mat-icon>edit</mat-icon>
+                      </a>
                     </div>
                   </div>
                 }

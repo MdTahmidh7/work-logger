@@ -160,6 +160,7 @@
     flex-direction: row;
     gap: 10px;
     text-align: left;
+    justify-content: space-between;
   }
 
   .info-icon {
@@ -168,6 +169,7 @@
 
   .info-label {
     font-size: 11px;
+    margin-right: auto;
   }
 
   .info-value {

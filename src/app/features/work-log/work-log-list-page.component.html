@@ -13,41 +13,83 @@
 
       <div class="log-list">
         @for (group of groupedLogs(); track group.date) {
-          <div class="date-group" [class.friday]="group.isFriday" [class.saturday]="group.isSaturday">
-            <div class="date-header">
-              <div class="date-info">
-                <span class="day-name">{{ group.dayName }}</span>
-                <span class="date-text">{{ group.formattedDate }}</span>
+          @if (!responsive.isMobile()) {
+            <div class="date-group" [class.friday]="group.isFriday" [class.saturday]="group.isSaturday">
+              <div class="date-header">
+                <div class="date-info">
+                  <span class="day-name">{{ group.dayName }}</span>
+                  <span class="date-text">{{ group.formattedDate }}</span>
+                </div>
+                <div class="date-summary">
+                  <span class="total-hours">{{ group.totalHours }}h</span>
+                  <span class="total-count">{{ group.logs.length }} tasks</span>
+                </div>
               </div>
-              <div class="date-summary">
-                <span class="total-hours">{{ group.totalHours }}h</span>
-                <span class="total-count">{{ group.logs.length }} tasks</span>
-              </div>
-            </div>
-            <div class="log-entries">
-              @for (log of group.logs; track log.id) {
-                <div class="log-entry">
-                  <div class="log-main">
-                    <div class="log-title">{{ log.title }}</div>
-                    @if (log.details) {
-                      <div class="log-details">{{ log.details }}</div>
-                    }
-                  </div>
-                  <div class="log-meta">
-                    <span class="duration">{{ formatDuration(log.durationMinutes) }}</span>
-                    <div class="log-actions">
-                      <a [routerLink]="['/edit', log.id]" mat-icon-button class="action-btn">
-                        <mat-icon>edit</mat-icon>
-                      </a>
-                      <button mat-icon-button class="action-btn delete-btn" (click)="deleteLog(log.id!)">
-                        <mat-icon>delete</mat-icon>
-                      </button>
+              <div class="log-entries">
+                @for (log of group.logs; track log.id) {
+                  <div class="log-entry">
+                    <div class="log-main">
+                      <div class="log-title">{{ log.title }}</div>
+                      @if (log.details) {
+                        <div class="log-details">{{ log.details }}</div>
+                      }
+                    </div>
+                    <div class="log-meta">
+                      <span class="duration">{{ formatDuration(log.durationMinutes) }}</span>
+                      <div class="log-actions">
+                        <a [routerLink]="['/edit', log.id]" mat-icon-button class="action-btn">
+                          <mat-icon>edit</mat-icon>
+                        </a>
+                        <button mat-icon-button class="action-btn delete-btn" (click)="deleteLog(log.id!)">
+                          <mat-icon>delete</mat-icon>
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              }
+                }
+              </div>
             </div>
-          </div>
+          } @else {
+            <div class="m-card" [class.m-friday]="group.isFriday" [class.m-saturday]="group.isSaturday">
+              <div class="m-card-header">
+                <div class="m-card-header-left">
+                  <div class="m-cal-icon">
+                    <mat-icon>calendar_today</mat-icon>
+                  </div>
+                  <span class="m-date">{{ group.formattedDate }}</span>
+                  <span class="m-day-pill">{{ group.dayName }}</span>
+                </div>
+                <div class="m-card-header-right">
+                  <span class="m-total-badge">
+                    <mat-icon class="m-badge-icon">schedule</mat-icon>
+                    {{ formatDuration(group.totalMinutes) }}
+                  </span>
+                  <button class="m-menu-btn">
+                    <mat-icon>more_vert</mat-icon>
+                  </button>
+                </div>
+              </div>
+
+              <div class="m-tasks">
+                @for (log of group.logs; track log.id) {
+                  <div class="m-task">
+                    <div class="m-task-dot"></div>
+                    <span class="m-task-title">{{ log.title }}</span>
+                    <span class="m-task-duration">
+                      <mat-icon class="m-task-clock">schedule</mat-icon>
+                      {{ formatDuration(log.durationMinutes) }}
+                    </span>
+                  </div>
+                }
+              </div>
+
+              <div class="m-card-footer">
+                <a [routerLink]="['/edit', group.logs[0].id]" class="m-edit-btn">
+                  <mat-icon>edit</mat-icon>
+                </a>
+              </div>
+            </div>
+          }
         } @empty {
           <div class="empty-state">
             <mat-icon>work_off</mat-icon>

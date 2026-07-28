@@ -267,6 +267,7 @@
 
   .stat-card {
     padding: 10px;
+    justify-content: space-between;
   }
 
   .stat-icon {
@@ -282,6 +283,10 @@
     font-size: 10px;
   }
 
+  .stat-info {
+    text-align: right;
+  }
+
   .stats-section {
     padding: 16px;
   }
@@ -293,104 +298,245 @@
   .activity-cards {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: 12px 16px;
+    gap: 16px;
+    padding: 16px;
   }
 
-  .activity-card {
-    background: var(--pwl-surface);
-    border: 1px solid var(--pwl-divider);
-    border-radius: 10px;
-    padding: 14px;
+  .m-card {
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid #eef0f2;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    padding: 14px 14px 6px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    border-left: 3px solid #34d399;
   }
 
-  .activity-card.workday {
-    background: rgba(13, 148, 136, 0.04);
-    border-left: 3px solid rgba(13, 148, 136, 0.4);
+  .m-card.m-friday {
+    border-left-color: #3b82f6;
   }
 
-  .activity-card.friday {
-    background: rgba(255, 204, 0, 0.06);
-    border-left: 3px solid #ffcc00;
+  .m-card.m-saturday {
+    border-left-color: #f97316;
   }
 
-  .activity-card.saturday {
-    background: rgba(255, 107, 107, 0.06);
-    border-left: 3px solid #ff6b6b;
-  }
-
-  .activity-card-header {
+  .m-card-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-  }
-
-  .activity-card-date {
-    font-size: 13px;
-    color: var(--pwl-text-primary);
-
-    b {
-      color: var(--pwl-text-secondary);
-      font-size: 12px;
-    }
-  }
-
-  .activity-card-row {
-    display: flex;
-    align-items: flex-start;
     gap: 8px;
-    font-size: 13px;
-
-    b {
-      color: var(--pwl-text-secondary);
-      font-size: 12px;
-      white-space: nowrap;
-      min-width: 42px;
-    }
-
-    span {
-      color: var(--pwl-text-primary);
-    }
+    padding-bottom: 12px;
   }
 
-  .activity-tasks {
+  .m-cal-icon {
     display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #ecfdf5;
+    flex-shrink: 0;
+
+    mat-icon {
+      font-size: 15px;
+      width: 15px;
+      height: 15px;
+      color: #10b981;
+    }
   }
 
-  .activity-task-chip {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--pwl-text-primary);
-    background: var(--pwl-surface-variant);
+  .m-card.m-friday .m-cal-icon {
+    background: #eff6ff;
+
+    mat-icon {
+      color: #3b82f6;
+    }
+  }
+
+  .m-card.m-saturday .m-cal-icon {
+    background: #fff7ed;
+
+    mat-icon {
+      color: #f97316;
+    }
+  }
+
+  .m-date {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111827;
+    white-space: nowrap;
+  }
+
+  .m-day-pill {
+    display: inline-flex;
+    align-items: center;
     padding: 2px 8px;
     border-radius: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 200px;
-  }
-
-  .activity-hours {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-  }
-
-  .activity-hour-chip {
+    background: #f3f4f6;
+    color: #6b7280;
     font-size: 11px;
-    color: var(--pwl-text-secondary);
-    background: var(--pwl-surface-variant);
-    padding: 2px 6px;
-    border-radius: 4px;
+    font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
-  .activity-card .holiday {
-    font-weight: 600;
+  .m-total-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: #ecfdf5;
+    color: #059669;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  .m-card.m-friday .m-total-badge {
+    background: #eff6ff;
+    color: #2563eb;
+  }
+
+  .m-card.m-saturday .m-total-badge {
+    background: #fff7ed;
+    color: #ea580c;
+  }
+
+  .m-badge-icon {
+    font-size: 12px;
+    width: 12px;
+    height: 12px;
+  }
+
+  .m-menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: none;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #9ca3af;
+    transition: background 0.15s;
+    flex-shrink: 0;
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+
+    &:hover {
+      background: #f3f4f6;
+    }
+  }
+
+  .m-tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .m-task {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+  }
+
+  .m-task-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #34d399;
+    flex-shrink: 0;
+    margin-top: 5px;
+  }
+
+  .m-card.m-friday .m-task-dot {
+    background: #3b82f6;
+  }
+
+  .m-card.m-saturday .m-task-dot {
+    background: #f97316;
+  }
+
+  .m-task-title {
+    flex: 1;
+    min-width: 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    line-height: 1.4;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  .m-task-duration {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: #ecfdf5;
+    color: #059669;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .m-card.m-friday .m-task-duration {
+    background: #eff6ff;
+    color: #2563eb;
+  }
+
+  .m-card.m-saturday .m-task-duration {
+    background: #fff7ed;
+    color: #ea580c;
+  }
+
+  .m-task-clock {
+    font-size: 11px;
+    width: 11px;
+    height: 11px;
+  }
+
+  .m-card-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 4px 0 2px;
+  }
+
+  .m-edit-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    color: #d1d5db;
+    text-decoration: none;
+    transition: all 0.15s ease;
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+
+    &:hover {
+      background: #f3f4f6;
+      color: #9ca3af;
+    }
   }
 
   .fab-button {
