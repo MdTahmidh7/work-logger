@@ -12,6 +12,7 @@ import { WorkLogService } from './services/work-log.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
 import { DateUtilsService } from '../../core/services/date-utils.service';
+import { ResponsiveService } from '../../core/services/responsive.service';
 import { WorkLog } from '../../core/models/work-log.model';
 
 @Component({
@@ -33,6 +34,7 @@ export class WorkLogFormComponent implements OnInit {
   private confirm = inject(ConfirmDialogService);
   private dateUtils = inject(DateUtilsService);
   private workLogService = inject(WorkLogService);
+  responsive = inject(ResponsiveService);
 
   isEditMode = signal(false);
   logId = signal<number>(0);

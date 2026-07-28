@@ -9,6 +9,7 @@ import { AttendanceService } from '../services/attendance.service';
 import { Attendance } from '../models/attendance.model';
 import { NotificationService } from '../../../core/services/notification.service';
 import { DateUtilsService } from '../../../core/services/date-utils.service';
+import { ResponsiveService } from '../../../core/services/responsive.service';
 import { WorkLogService } from '../../work-log/services/work-log.service';
 import { WorkLog } from '../../../core/models/work-log.model';
 import {
@@ -39,6 +40,7 @@ export class AttendanceDashboardPageComponent implements OnInit {
   private router = inject(Router);
   private dateUtils = inject(DateUtilsService);
   private workLogService = inject(WorkLogService);
+  responsive = inject(ResponsiveService);
 
   todayAttendance = signal<Attendance | null>(null);
   attendanceMap = signal<Map<string, Attendance>>(new Map());

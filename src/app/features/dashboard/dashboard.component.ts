@@ -11,6 +11,7 @@ import { TodayAttendanceCardComponent } from '../attendance/components/today-att
 import { AttendanceActionButtonComponent } from '../attendance/components/attendance-action-button.component';
 import { DateUtilsService } from '../../core/services/date-utils.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { ResponsiveService } from '../../core/services/responsive.service';
 import { WorkLog } from '../../core/models/work-log.model';
 import { Attendance } from '../attendance/models/attendance.model';
 import { AttendanceService } from '../attendance/services/attendance.service';
@@ -32,6 +33,7 @@ export class DashboardComponent implements OnInit {
   private attendanceService = inject(AttendanceService);
   private workLogService = inject(WorkLogService);
   private notify = inject(NotificationService);
+  responsive = inject(ResponsiveService);
   private readonly PAGE_SIZE = 7;
 
   logs = signal<WorkLog[]>([]);

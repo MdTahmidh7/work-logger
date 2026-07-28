@@ -1,9 +1,10 @@
-import { Component, input, output } from '@angular/core';
+import { Component, input, output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { Attendance } from '../models/attendance.model';
 import { formatTime, formatWorkingHoursHM, isWeekend, isFriday, isSaturday } from '../../../core/utils/format.utils';
+import { ResponsiveService } from '../../../core/services/responsive.service';
 
 @Component({
   standalone: true,
@@ -13,6 +14,7 @@ import { formatTime, formatWorkingHoursHM, isWeekend, isFriday, isSaturday } fro
   styleUrls: ['./attendance-history-table.component.scss']
 })
 export class AttendanceHistoryTableComponent {
+  responsive = inject(ResponsiveService);
   records = input.required<Attendance[]>();
 
   formatDate(date: string): string {

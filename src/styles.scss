@@ -62,9 +62,20 @@ body {
   padding: 0;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 a { text-decoration: none; }
+
+* {
+  box-sizing: border-box;
+}
+
+img { max-width: 100%; height: auto; }
+
+input, textarea, select, button {
+  font-family: inherit;
+}
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
@@ -84,6 +95,16 @@ a { text-decoration: none; }
 @keyframes slideOutRight {
   from { opacity: 1; transform: translateX(0); }
   to { opacity: 0; transform: translateX(40px); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeOverlay {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @import 'sweetalert2/dist/sweetalert2.min.css';
@@ -161,4 +182,17 @@ a { text-decoration: none; }
 [data-theme="dark"] .swal2-popup.swal2-confirm .swal2-title,
 [data-theme="dark"] .swal2-popup.swal2-confirm .swal2-html-container {
   color: var(--pwl-text-primary) !important;
+}
+
+@media (max-width: 768px) {
+  .swal2-popup.swal2-toast {
+    margin: 8px 10px 0 0 !important;
+    padding: 10px 12px !important;
+  }
+
+  .swal2-popup.swal2-confirm {
+    padding: 20px !important;
+    margin: 16px;
+    width: calc(100% - 32px) !important;
+  }
 }

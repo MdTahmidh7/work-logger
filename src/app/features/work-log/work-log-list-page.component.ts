@@ -9,6 +9,7 @@ import { WorkLogService } from './services/work-log.service';
 import { DateUtilsService } from '../../core/services/date-utils.service';
 import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { ResponsiveService } from '../../core/services/responsive.service';
 import { WorkLog } from '../../core/models/work-log.model';
 
 @Component({
@@ -23,6 +24,7 @@ export class WorkLogListPageComponent implements OnInit {
   private confirm = inject(ConfirmDialogService);
   private notify = inject(NotificationService);
   private workLogService = inject(WorkLogService);
+  responsive = inject(ResponsiveService);
 
   filteredLogs = signal<WorkLog[]>([]);
 

@@ -17,6 +17,31 @@
 .header-left {
   display: flex;
   align-items: center;
+  gap: 12px;
+}
+
+.mobile-menu-btn {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--pwl-text-primary);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+
+  &:hover {
+    background: var(--pwl-surface-variant);
+  }
+
+  mat-icon {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+  }
 }
 
 .brand {
@@ -65,22 +90,22 @@
   font-weight: 500;
   transition: all 0.2s ease;
   text-decoration: none;
-}
 
-.nav-link:hover {
-  background: var(--pwl-surface-variant);
-  color: var(--pwl-text-primary);
-}
+  &:hover {
+    background: var(--pwl-surface-variant);
+    color: var(--pwl-text-primary);
+  }
 
-.nav-link.active {
-  background: var(--pwl-primary-light);
-  color: var(--pwl-primary);
-}
+  &.active {
+    background: var(--pwl-primary-light);
+    color: var(--pwl-primary);
+  }
 
-.nav-link mat-icon {
-  font-size: 18px;
-  width: 18px;
-  height: 18px;
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
 }
 
 .header-right {
@@ -107,20 +132,172 @@
   color: #d32f2f;
 }
 
+.mobile-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1100;
+  animation: fadeOverlay 0.2s ease;
+}
+
+.mobile-drawer {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 280px;
+  background: var(--pwl-surface);
+  z-index: 1200;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+  animation: slideInLeft 0.25s ease;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.drawer-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--pwl-divider);
+}
+
+.drawer-nav {
+  flex: 1;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.drawer-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  color: var(--pwl-text-secondary);
+  font-size: 15px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  text-decoration: none;
+
+  &:hover {
+    background: var(--pwl-surface-variant);
+    color: var(--pwl-text-primary);
+  }
+
+  &.active {
+    background: var(--pwl-primary-light);
+    color: var(--pwl-primary);
+  }
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.drawer-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--pwl-divider);
+}
+
+.drawer-user {
+  font-size: 13px;
+  color: var(--pwl-text-secondary);
+  margin-bottom: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drawer-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.drawer-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--pwl-text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  text-align: left;
+  font-family: 'Inter', sans-serif;
+
+  &:hover {
+    background: var(--pwl-surface-variant);
+    color: var(--pwl-text-primary);
+  }
+
+  &.logout:hover {
+    background: rgba(220, 38, 38, 0.08);
+    color: #dc2626;
+  }
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
 @media (max-width: 768px) {
   .header {
     padding: 0 16px;
+    height: 60px;
+  }
+
+  .mobile-menu-btn {
+    display: flex;
+  }
+
+  .header-nav {
+    display: none;
+  }
+
+  .user-email {
+    display: none;
+  }
+
+  .mobile-overlay {
+    display: block;
+  }
+
+  .mobile-drawer {
+    display: flex;
   }
 
   .brand-name {
-    display: none;
+    font-size: 16px;
   }
 
-  .nav-link span {
-    display: none;
+  .brand-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
   }
 
-  .nav-link {
-    padding: 8px;
+  .brand-icon mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-overlay,
+  .mobile-drawer {
+    display: none !important;
   }
 }

@@ -1,5 +1,8 @@
 <header class="header">
   <div class="header-left">
+    <button class="mobile-menu-btn" (click)="toggleMobileMenu()">
+      <mat-icon>{{ mobileMenuOpen() ? 'close' : 'menu' }}</mat-icon>
+    </button>
     <div class="brand">
       <div class="brand-icon">
         <mat-icon>schedule</mat-icon>
@@ -39,3 +42,50 @@
     </button>
   </div>
 </header>
+
+@if (mobileMenuOpen()) {
+  <div class="mobile-overlay" (click)="closeMobileMenu()"></div>
+  <nav class="mobile-drawer">
+    <div class="drawer-header">
+      <div class="brand">
+        <div class="brand-icon">
+          <mat-icon>schedule</mat-icon>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">Work Logger</span>
+        </div>
+      </div>
+    </div>
+    <div class="drawer-nav">
+      <a routerLink="/dashboard" routerLinkActive="active" class="drawer-link" (click)="closeMobileMenu()">
+        <mat-icon>dashboard</mat-icon>
+        <span>Dashboard</span>
+      </a>
+      <a routerLink="/work-log" routerLinkActive="active" class="drawer-link" (click)="closeMobileMenu()">
+        <mat-icon>add_circle</mat-icon>
+        <span>Add Log</span>
+      </a>
+      <a routerLink="/attendance" routerLinkActive="active" class="drawer-link" (click)="closeMobileMenu()">
+        <mat-icon>fingerprint</mat-icon>
+        <span>Attendance</span>
+      </a>
+      <a routerLink="/settings" routerLinkActive="active" class="drawer-link" (click)="closeMobileMenu()">
+        <mat-icon>settings</mat-icon>
+        <span>Settings</span>
+      </a>
+    </div>
+    <div class="drawer-footer">
+      <div class="drawer-user">{{ userEmail() }}</div>
+      <div class="drawer-actions">
+        <button class="drawer-action-btn" (click)="toggleTheme()">
+          <mat-icon>{{ isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+          <span>{{ isDark() ? 'Light Mode' : 'Dark Mode' }}</span>
+        </button>
+        <button class="drawer-action-btn logout" (click)="logout()">
+          <mat-icon>logout</mat-icon>
+          <span>Sign Out</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+}

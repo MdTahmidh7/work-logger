@@ -1,40 +1,80 @@
     <div class="history-table">
-      <div class="table-header">
-        <div class="th">Date</div>
-        <div class="th">Day</div>
-        <div class="th">First Punch In</div>
-        <div class="th">Last Punch Out</div>
-        <div class="th">Working Hour</div>
-        <div class="th">Status</div>
-      </div>
-      @for (record of records(); track record.id) {
-        <div class="table-row"
-             [class.workday]="!isWeekend(record.date)"
-             [class.friday]="isFriday(record.date)"
-             [class.saturday]="isSaturday(record.date)">
-          <div class="td">{{ formatDate(record.date) }}</div>
-          <div class="td day-cell" [class.holiday]="isFriday(record.date) || isSaturday(record.date)">
-            {{ getDayName(record.date) }}
-          </div>
-          <div class="td punch-cell">{{ formatTime(record.firstPunchIn) }}</div>
-          <div class="td punch-cell">
-            @if (record.lastPunchOut) {
-              {{ formatTime(record.lastPunchOut) }}
-            } @else {
-              --
-            }
-          </div>
-          <div class="td hours-cell">
-            <span class="hours-badge" [class.friday-badge]="isFriday(record.date)" [class.saturday-badge]="isSaturday(record.date)">
-              {{ formatWorkingHours(record.workingMinutes) }}
-            </span>
-          </div>
-          <div class="td">
-            <span class="status-badge" [class]="record.status">
-              {{ formatStatus(record.status) }}
-            </span>
-          </div>
+      @if (!responsive.isMobile()) {
+        <div class="table-header">
+          <div class="th">Date</div>
+          <div class="th">Day</div>
+          <div class="th">First Punch In</div>
+          <div class="th">Last Punch Out</div>
+          <div class="th">Working Hour</div>
+          <div class="th">Status</div>
         </div>
+      }
+      @for (record of records(); track record.id) {
+        @if (!responsive.isMobile()) {
+          <div class="table-row"
+               [class.workday]="!isWeekend(record.date)"
+               [class.friday]="isFriday(record.date)"
+               [class.saturday]="isSaturday(record.date)">
+            <div class="td">{{ formatDate(record.date) }}</div>
+            <div class="td day-cell" [class.holiday]="isFriday(record.date) || isSaturday(record.date)">
+              {{ getDayName(record.date) }}
+            </div>
+            <div class="td punch-cell">{{ formatTime(record.firstPunchIn) }}</div>
+            <div class="td punch-cell">
+              @if (record.lastPunchOut) {
+                {{ formatTime(record.lastPunchOut) }}
+              } @else {
+                --
+              }
+            </div>
+            <div class="td hours-cell">
+              <span class="hours-badge" [class.friday-badge]="isFriday(record.date)" [class.saturday-badge]="isSaturday(record.date)">
+                {{ formatWorkingHours(record.workingMinutes) }}
+              </span>
+            </div>
+            <div class="td">
+              <span class="status-badge" [class]="record.status">
+                {{ formatStatus(record.status) }}
+              </span>
+            </div>
+          </div>
+        } @else {
+          <div class="hist-card"
+               [class.workday]="!isWeekend(record.date)"
+               [class.friday]="isFriday(record.date)"
+               [class.saturday]="isSaturday(record.date)">
+            <div class="hist-card-header">
+              <span class="date-text">{{ formatDate(record.date) }}</span>
+              <span class="status-badge" [class]="record.status">{{ formatStatus(record.status) }}</span>
+            </div>
+            <div class="hist-card-row">
+              <b>Day:</b>
+              <span [class.holiday]="isFriday(record.date) || isSaturday(record.date)">{{ getDayName(record.date) }}</span>
+            </div>
+            <div class="hist-card-row">
+              <b>Punch In:</b>
+              <span>{{ formatTime(record.firstPunchIn) }}</span>
+            </div>
+            <div class="hist-card-row">
+              <b>Punch Out:</b>
+              <span>
+                @if (record.lastPunchOut) {
+                  {{ formatTime(record.lastPunchOut) }}
+                } @else {
+                  --
+                }
+              </span>
+            </div>
+            <div class="hist-card-row">
+              <b>Working:</b>
+              <span>
+                <span class="hours-badge" [class.friday-badge]="isFriday(record.date)" [class.saturday-badge]="isSaturday(record.date)">
+                  {{ formatWorkingHours(record.workingMinutes) }}
+                </span>
+              </span>
+            </div>
+          </div>
+        }
       } @empty {
         <div class="empty-state">
           <mat-icon>event_busy</mat-icon>

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -14,6 +14,7 @@ import { AuthService } from '../../core/services/auth.service';
 })
 export class HeaderComponent {
   isDark = signal(false);
+  mobileMenuOpen = signal(false);
   private authService = inject(AuthService);
 
   userEmail = signal('');
@@ -32,6 +33,14 @@ export class HeaderComponent {
     });
   }
 
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event): void {
+    const target = event.target as HTMLElement;
+    if (this.mobileMenuOpen() && !target.closest('.header') && !target.closest('.mobile-overlay')) {
+      this.mobileMenuOpen.set(false);
+    }
+  }
+
   toggleTheme(): void {
     this.isDark.update(v => !v);
     const theme = this.isDark() ? 'dark' : 'light';
@@ -39,7 +48,16 @@ export class HeaderComponent {
     localStorage.setItem('theme', theme);
   }
 
+  toggleMobileMenu(): void {
+    this.mobileMenuOpen.update(v => !v);
+  }
+
+  closeMobileMenu(): void {
+    this.mobileMenuOpen.set(false);
+  }
+
   async logout(): Promise<void> {
+    this.closeMobileMenu();
     await this.authService.signOut();
   }
 }

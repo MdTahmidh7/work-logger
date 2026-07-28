@@ -109,39 +109,79 @@
               <p>Start tracking your work activity.</p>
             </div>
           } @else {
-            <div class="activity-table">
-              <div class="table-header">
-                <div class="th">Date</div>
-                <div class="th">Day</div>
-                <div class="th">Task Items</div>
-                <div class="th">Log Hours</div>
-                <div class="th">Total Hours</div>
-              </div>
-              @for (group of pagedLogs(); track group.date) {
-                <div class="table-row"
-                     [class.friday]="group.isFriday"
-                     [class.saturday]="group.isSaturday"
-                     [class.workday]="!group.isFriday && !group.isSaturday">
-                  <div class="td">{{ formatShortDate(group.date) }}</div>
-                  <div class="td day-cell" [class.holiday]="group.isFriday || group.isSaturday">{{ group.dayName }}</div>
-                  <div class="td tasks-cell">
-                    @for (log of group.logs; track log.id) {
-                      <div class="task-item">{{ log.title }}</div>
-                    }
-                  </div>
-                  <div class="td hours-cell">
-                    @for (log of group.logs; track log.id) {
-                      <div class="hour-item">{{ formatDuration(log.durationMinutes) }}</div>
-                    }
-                  </div>
-                  <div class="td total-cell">
-                    <span class="total-badge" [class.friday-badge]="group.isFriday" [class.saturday-badge]="group.isSaturday">
-                      {{ group.totalHours }}
-                    </span>
-                  </div>
+            @if (!responsive.isMobile()) {
+              <div class="activity-table">
+                <div class="table-header">
+                  <div class="th">Date</div>
+                  <div class="th">Day</div>
+                  <div class="th">Task Items</div>
+                  <div class="th">Log Hours</div>
+                  <div class="th">Total Hours</div>
                 </div>
-              }
-            </div>
+                @for (group of pagedLogs(); track group.date) {
+                  <div class="table-row"
+                       [class.friday]="group.isFriday"
+                       [class.saturday]="group.isSaturday"
+                       [class.workday]="!group.isFriday && !group.isSaturday">
+                    <div class="td">{{ formatShortDate(group.date) }}</div>
+                    <div class="td day-cell" [class.holiday]="group.isFriday || group.isSaturday">{{ group.dayName }}</div>
+                    <div class="td tasks-cell">
+                      @for (log of group.logs; track log.id) {
+                        <div class="task-item">{{ log.title }}</div>
+                      }
+                    </div>
+                    <div class="td hours-cell">
+                      @for (log of group.logs; track log.id) {
+                        <div class="hour-item">{{ formatDuration(log.durationMinutes) }}</div>
+                      }
+                    </div>
+                    <div class="td total-cell">
+                      <span class="total-badge" [class.friday-badge]="group.isFriday" [class.saturday-badge]="group.isSaturday">
+                        {{ group.totalHours }}
+                      </span>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="activity-cards">
+                @for (group of pagedLogs(); track group.date) {
+                  <div class="activity-card"
+                       [class.friday]="group.isFriday"
+                       [class.saturday]="group.isSaturday"
+                       [class.workday]="!group.isFriday && !group.isSaturday">
+                    <div class="activity-card-header">
+                      <div class="activity-card-date">
+                        <b>Date:</b> <span>{{ formatShortDate(group.date) }}</span>
+                      </div>
+                      <span class="total-badge" [class.friday-badge]="group.isFriday" [class.saturday-badge]="group.isSaturday">
+                        {{ group.totalHours }}
+                      </span>
+                    </div>
+                    <div class="activity-card-row">
+                      <b>Day:</b>
+                      <span [class.holiday]="group.isFriday || group.isSaturday">{{ group.dayName }}</span>
+                    </div>
+                    <div class="activity-card-row">
+                      <b>Tasks:</b>
+                      <div class="activity-tasks">
+                        @for (log of group.logs; track log.id) {
+                          <span class="activity-task-chip">{{ log.title }}</span>
+                        }
+                      </div>
+                    </div>
+                    <div class="activity-card-row">
+                      <b>Hours:</b>
+                      <div class="activity-hours">
+                        @for (log of group.logs; track log.id) {
+                          <span class="activity-hour-chip">{{ formatDuration(log.durationMinutes) }}</span>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
             @if (totalPages() > 1) {
               <div class="pagination">
                 <button mat-icon-button class="page-btn" [disabled]="currentPage() === 0" (click)="prevPage()">

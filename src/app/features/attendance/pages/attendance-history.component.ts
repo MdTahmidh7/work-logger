@@ -7,6 +7,7 @@ import { AttendanceStatCardComponent } from '../components/attendance-stat-card.
 import { AttendanceService } from '../services/attendance.service';
 import { Attendance, MonthlyStatistics } from '../models/attendance.model';
 import { NotificationService } from '../../../core/services/notification.service';
+import { ResponsiveService } from '../../../core/services/responsive.service';
 import { format, parseISO, eachDayOfInterval, subDays, differenceInCalendarDays } from 'date-fns';
 
 @Component({
@@ -20,6 +21,7 @@ export class AttendanceHistoryPageComponent implements OnInit {
   private attendanceService = inject(AttendanceService);
   private notify = inject(NotificationService);
   private router = inject(Router);
+  responsive = inject(ResponsiveService);
 
   attendanceMap = signal<Map<string, Attendance>>(new Map());
   monthlyStats = signal<MonthlyStatistics | null>(null);

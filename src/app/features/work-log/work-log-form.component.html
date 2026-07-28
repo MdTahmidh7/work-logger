@@ -98,51 +98,84 @@
               <p>No work logs match your current filter.</p>
             </div>
           } @else {
-            <div class="log-table">
-              <div class="table-header">
-                <div class="th">Date</div>
-                <div class="th">Day</div>
-                <div class="th">Task</div>
-                <div class="th">Duration</div>
-                <div class="th actions-th"></div>
-              </div>
-              @for (item of pagedLogs(); track item.log.id) {
-                <div class="table-row"
-                     [class.friday]="item.isFriday"
-                     [class.saturday]="item.isSaturday"
-                     [class.workday]="!item.isFriday && !item.isSaturday"
-                     [class.first-of-day]="item.isFirstOfDay"
-                     [class.day-continuation]="!item.isFirstOfDay">
-                  <div class="td date-cell">
-                    @if (item.isFirstOfDay) {
-                      <span class="date-text">{{ item.dateFormatted }}</span>
-                    }
-                  </div>
-                  <div class="td day-cell" [class.holiday]="item.isFriday || item.isSaturday">
-                    @if (item.isFirstOfDay) {
-                      {{ item.dayName }}
-                    }
-                  </div>
-                  <div class="td title-cell">
-                    <div class="title-text">{{ item.log.title }}</div>
-                    @if (item.log.details) {
-                      <div class="details-text">{{ item.log.details }}</div>
-                    }
-                  </div>
-                  <div class="td duration-cell">
-                    <span class="duration-badge">{{ formatDuration(item.log.durationMinutes) }}</span>
-                  </div>
-                  <div class="td actions-cell">
-                    <a (click)="editLog(item.log.id!)" class="edit-link" matTooltip="Edit log">
-                      <mat-icon class="edit-icon">edit</mat-icon>
-                    </a>
-                    <a (click)="deleteLog(item.log)" class="delete-link" matTooltip="Delete log">
-                      <mat-icon class="delete-icon">delete</mat-icon>
-                    </a>
-                  </div>
+            @if (!responsive.isMobile()) {
+              <div class="log-table">
+                <div class="table-header">
+                  <div class="th">Date</div>
+                  <div class="th">Day</div>
+                  <div class="th">Task</div>
+                  <div class="th">Duration</div>
+                  <div class="th actions-th"></div>
                 </div>
-              }
-            </div>
+                @for (item of pagedLogs(); track item.log.id) {
+                  <div class="table-row"
+                       [class.friday]="item.isFriday"
+                       [class.saturday]="item.isSaturday"
+                       [class.workday]="!item.isFriday && !item.isSaturday"
+                       [class.first-of-day]="item.isFirstOfDay"
+                       [class.day-continuation]="!item.isFirstOfDay">
+                    <div class="td date-cell">
+                      @if (item.isFirstOfDay) {
+                        <span class="date-text">{{ item.dateFormatted }}</span>
+                      }
+                    </div>
+                    <div class="td day-cell" [class.holiday]="item.isFriday || item.isSaturday">
+                      @if (item.isFirstOfDay) {
+                        {{ item.dayName }}
+                      }
+                    </div>
+                    <div class="td title-cell">
+                      <div class="title-text">{{ item.log.title }}</div>
+                      @if (item.log.details) {
+                        <div class="details-text">{{ item.log.details }}</div>
+                      }
+                    </div>
+                    <div class="td duration-cell">
+                      <span class="duration-badge">{{ formatDuration(item.log.durationMinutes) }}</span>
+                    </div>
+                    <div class="td actions-cell">
+                      <a (click)="editLog(item.log.id!)" class="edit-link" matTooltip="Edit log">
+                        <mat-icon class="edit-icon">edit</mat-icon>
+                      </a>
+                      <a (click)="deleteLog(item.log)" class="delete-link" matTooltip="Delete log">
+                        <mat-icon class="delete-icon">delete</mat-icon>
+                      </a>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="log-cards">
+                @for (item of pagedLogs(); track item.log.id) {
+                  <div class="log-card"
+                       [class.friday]="item.isFriday"
+                       [class.saturday]="item.isSaturday"
+                       [class.workday]="!item.isFriday && !item.isSaturday">
+                    <div class="log-card-header">
+                      <div class="log-card-date">
+                        @if (item.isFirstOfDay) {
+                          <span class="date-text">{{ item.dateFormatted }}</span>
+                          <span class="day-text" [class.holiday]="item.isFriday || item.isSaturday">{{ item.dayName }}</span>
+                        }
+                      </div>
+                      <span class="duration-badge">{{ formatDuration(item.log.durationMinutes) }}</span>
+                    </div>
+                    <div class="log-card-title">{{ item.log.title }}</div>
+                    @if (item.log.details) {
+                      <div class="log-card-details">{{ item.log.details }}</div>
+                    }
+                    <div class="log-card-actions">
+                      <a (click)="editLog(item.log.id!)" class="edit-link" matTooltip="Edit log">
+                        <mat-icon class="edit-icon">edit</mat-icon>
+                      </a>
+                      <a (click)="deleteLog(item.log)" class="delete-link" matTooltip="Delete log">
+                        <mat-icon class="delete-icon">delete</mat-icon>
+                      </a>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
             @if (totalPages() > 1) {
               <div class="pagination">
                 <button mat-icon-button class="page-btn" [disabled]="currentPage() === 0" (click)="prevPage()">

@@ -2,6 +2,8 @@
   border-radius: 14px;
   padding: 16px 20px;
   border: 1px solid var(--pwl-divider);
+  background: var(--pwl-surface);
+  min-width: 0;
 }
 
 .chart-header {
@@ -22,4 +24,18 @@
 canvas {
   width: 100% !important;
   height: 100% !important;
+}
+
+@media (max-width: 768px) {
+  .chart-card {
+    padding: 14px 16px;
+  }
+
+  .chart-header h3 {
+    font-size: 13px;
+  }
+
+  .chart-container {
+    height: 220px;
+  }
 }
