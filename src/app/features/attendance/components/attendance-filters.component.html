@@ -1,0 +1,21 @@
+    <div class="date-filter">
+      @for (filter of filters; track filter.value) {
+        <button class="filter-btn" [class.active]="selected() === filter.value"
+                (click)="select(filter.value)">
+          <mat-icon>{{ filter.icon }}</mat-icon>
+          <span>{{ filter.label }}</span>
+        </button>
+      }
+      <button class="filter-btn custom-btn" [class.active]="selected() === 'custom'"
+              (click)="showCustom.set(!showCustom())">
+        <mat-icon>tune</mat-icon>
+        <span>Custom</span>
+      </button>
+      @if (showCustom()) {
+        <div class="custom-range">
+          <input type="date" [value]="customStart()" (change)="onStartChange($event)" class="date-input">
+          <span class="range-sep">to</span>
+          <input type="date" [value]="customEnd()" (change)="onEndChange($event)" class="date-input">
+        </div>
+      }
+    </div>

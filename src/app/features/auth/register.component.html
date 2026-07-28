@@ -1,0 +1,77 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-logo">
+        <mat-icon>schedule</mat-icon>
+      </div>
+      <h1>Create Account</h1>
+      <p>Start tracking your work today</p>
+    </div>
+
+    @if (verificationSent()) {
+      <div class="success-message">
+        <mat-icon>mark_email_read</mat-icon>
+        <p>Check your email and click the verification link to activate your account.</p>
+        <a routerLink="/login" class="link primary">Back to Sign In</a>
+      </div>
+    } @else {
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="auth-form">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Email</mat-label>
+          <input matInput formControlName="email" type="email" placeholder="you@example.com" autocomplete="email">
+          <mat-icon matPrefix>email</mat-icon>
+          @if (form.get('email')?.hasError('required') && form.get('email')?.touched) {
+            <mat-error>Email is required</mat-error>
+          }
+          @if (form.get('email')?.hasError('email') && form.get('email')?.touched) {
+            <mat-error>Please enter a valid email</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Password</mat-label>
+          <input matInput formControlName="password" [type]="hidePassword() ? 'password' : 'text'" placeholder="Minimum 6 characters" autocomplete="new-password">
+          <mat-icon matPrefix>lock</mat-icon>
+          <button mat-icon-button matSuffix type="button" (click)="togglePasswordVisibility()">
+            <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          @if (form.get('password')?.hasError('required') && form.get('password')?.touched) {
+            <mat-error>Password is required</mat-error>
+          }
+          @if (form.get('password')?.hasError('minlength') && form.get('password')?.touched) {
+            <mat-error>Minimum 6 characters</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Confirm Password</mat-label>
+          <input matInput formControlName="confirmPassword" [type]="hideConfirmPassword() ? 'password' : 'text'" placeholder="Re-enter your password" autocomplete="new-password">
+          <mat-icon matPrefix>lock_outline</mat-icon>
+          <button mat-icon-button matSuffix type="button" (click)="toggleConfirmPasswordVisibility()">
+            <mat-icon>{{ hideConfirmPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          @if (form.get('confirmPassword')?.hasError('required') && form.get('confirmPassword')?.touched) {
+            <mat-error>Please confirm your password</mat-error>
+          }
+        </mat-form-field>
+
+        <button mat-flat-button color="primary" type="submit" class="full-width auth-btn" [disabled]="loading()">
+          <ng-container>
+            @if (loading()) {
+              <mat-icon class="spinner">sync</mat-icon>
+              Creating account...
+            } @else {
+              <mat-icon>person_add</mat-icon>
+              Create Account
+            }
+          </ng-container>
+        </button>
+      </form>
+    }
+
+    <div class="auth-links">
+      <span class="divider-text">Already have an account?</span>
+      <a routerLink="/login" class="link primary">Sign in</a>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,45 @@
+    <div class="history-table">
+      <div class="table-header">
+        <div class="th">Date</div>
+        <div class="th">Day</div>
+        <div class="th">First Punch In</div>
+        <div class="th">Last Punch Out</div>
+        <div class="th">Working Hour</div>
+        <div class="th">Status</div>
+      </div>
+      @for (record of records(); track record.id) {
+        <div class="table-row"
+             [class.workday]="!isWeekend(record.date)"
+             [class.friday]="isFriday(record.date)"
+             [class.saturday]="isSaturday(record.date)">
+          <div class="td">{{ formatDate(record.date) }}</div>
+          <div class="td day-cell" [class.holiday]="isFriday(record.date) || isSaturday(record.date)">
+            {{ getDayName(record.date) }}
+          </div>
+          <div class="td punch-cell">{{ formatTime(record.firstPunchIn) }}</div>
+          <div class="td punch-cell">
+            @if (record.lastPunchOut) {
+              {{ formatTime(record.lastPunchOut) }}
+            } @else {
+              --
+            }
+          </div>
+          <div class="td hours-cell">
+            <span class="hours-badge" [class.friday-badge]="isFriday(record.date)" [class.saturday-badge]="isSaturday(record.date)">
+              {{ formatWorkingHours(record.workingMinutes) }}
+            </span>
+          </div>
+          <div class="td">
+            <span class="status-badge" [class]="record.status">
+              {{ formatStatus(record.status) }}
+            </span>
+          </div>
+        </div>
+      } @empty {
+        <div class="empty-state">
+          <mat-icon>event_busy</mat-icon>
+          <h3>No attendance records</h3>
+          <p>No attendance data for this period.</p>
+        </div>
+      }
+    </div>

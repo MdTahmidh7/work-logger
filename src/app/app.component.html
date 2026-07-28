@@ -1,0 +1,6 @@
+@if (showHeader) {
+  <app-header />
+}
+<main [class.with-header]="showHeader">
+  <router-outlet />
+</main>

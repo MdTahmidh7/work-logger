@@ -24,11 +24,14 @@ export interface DashboardStats {
   mostProductiveDay: { date: string; tasks: number };
 }
 
+import { Attendance } from './attendance.model';
+
 export interface BackupData {
   version: string;
   exportedAt: string;
   app: string;
   data: {
     workLogs: WorkLog[];
+    attendance?: Attendance[];
   };
 }

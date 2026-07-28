@@ -1,0 +1,39 @@
+{
+  "version": "2.0",
+  "exportedAt": "2026-07-20T09:12:18.489Z",
+  "app": "Personal Work Logger",
+  "data": {
+    "workLogs": [
+      {
+        "title": "Daily Scrum",
+        "details": "Daily stand up meetin",
+        "date": "2026-07-20",
+        "durationMinutes": 15,
+        "createdAt": "2026-07-20T09:11:53.014Z",
+        "updatedAt": "2026-07-20T09:11:53.014Z",
+        "id": 17
+      },
+      {
+        "title": "Meeting",
+        "details": "",
+        "date": "2026-07-20",
+        "durationMinutes": 90,
+        "createdAt": "2026-07-20T09:12:03.174Z",
+        "updatedAt": "2026-07-20T09:12:03.174Z",
+        "id": 18
+      }
+    ],
+    "attendance": [
+      {
+        "date": "2026-07-20",
+        "firstPunchIn": "15:11",
+        "lastPunchOut": "15:12",
+        "workingMinutes": 1,
+        "status": "completed",
+        "createdAt": "2026-07-20T09:11:26.037Z",
+        "updatedAt": "2026-07-20T09:12:07.862Z",
+        "id": 5
+      }
+    ]
+  }
+}

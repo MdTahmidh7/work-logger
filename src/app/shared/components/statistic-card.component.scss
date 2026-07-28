@@ -1,120 +1,45 @@
-.statistic-card {
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+.stat-card {
+  border-radius: 14px;
+  padding: 16px 20px;
+  border: 1px solid var(--pwl-divider);
   transition: all 0.3s ease;
-  padding: 20px;
-  height: 100%;
-  position: relative;
-  overflow: hidden;
 }
 
-.statistic-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+.stat-card:hover {
+  transform: translateY(-2px);
 }
 
-.statistic-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
-}
-
-.statistic-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.statistic-main {
+.stat-header {
   display: flex;
   align-items: center;
-  gap: 16px;
-  flex: 1;
+  justify-content: space-between;
+  margin-bottom: 10px;
 }
 
-.statistic-icon {
-  width: 48px;
-  height: 48px;
+.stat-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
-  background: rgba(0, 0, 0, 0.02);
 }
 
-.statistic-icon mat-icon {
+.stat-icon mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.stat-value {
   font-size: 24px;
-  width: 24px;
-  height: 24px;
-}
-
-.statistic-info {
-  flex: 1;
-}
-
-.statistic-value {
-  font-size: 28px;
   font-weight: 700;
-  color: var(--text-primary);
-  margin: 0;
-  line-height: 1.2;
+  margin-bottom: 2px;
+  line-height: 1.1;
 }
 
-.statistic-label {
-  font-size: 14px;
+.stat-label {
+  font-size: 12px;
+  color: var(--pwl-text-secondary);
   font-weight: 500;
-  color: var(--text-secondary);
-  margin: 4px 0 0 0;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.statistic-change {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 8px;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.change-icon {
-  font-size: 16px;
-  width: 16px;
-  height: 16px;
-}
-
-.change-value {
-  font-weight: 600;
-}
-
-.change-period {
-  color: var(--text-tertiary);
-  font-weight: 400;
-}
-
-@media (max-width: 768px) {
-  .statistic-value {
-    font-size: 24px;
-  }
-
-  .statistic-label {
-    font-size: 12px;
-  }
-
-  .statistic-icon {
-    width: 40px;
-    height: 40px;
-  }
-
-  .statistic-icon mat-icon {
-    font-size: 20px;
-    width: 20px;
-    height: 20px;
-  }
 }

@@ -8,43 +8,8 @@ Chart.register(...registerables);
   standalone: true,
   selector: 'app-chart-card',
   imports: [CommonModule],
-  template: `
-    <div class="chart-card" [style.background]="cardBg()">
-      <div class="chart-header">
-        <h3>{{ title() }}</h3>
-      </div>
-      <div class="chart-container">
-        <canvas #canvas></canvas>
-      </div>
-    </div>
-  `,
-  styles: [`
-    .chart-card {
-      border-radius: 14px;
-      padding: 16px 20px;
-      border: 1px solid var(--pwl-divider);
-    }
-
-    .chart-header {
-      margin-bottom: 12px;
-    }
-
-    .chart-header h3 {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--pwl-text-primary);
-    }
-
-    .chart-container {
-      position: relative;
-      height: 180px;
-    }
-
-    canvas {
-      width: 100% !important;
-      height: 100% !important;
-    }
-  `]
+  templateUrl: './chart-card.component.html',
+  styleUrls: ['./chart-card.component.scss']
 })
 export class ChartCardComponent implements OnDestroy {
   title = input.required<string>();

@@ -1,29 +1,31 @@
-import { Injectable } from '@angular/core';
-import { db } from '../../../core/database/database.service';
-import { Attendance, MonthlyStatistics } from '../models/attendance.model';
-import { format, parseISO, startOfMonth, endOfMonth, subDays, startOfWeek, endOfWeek, startOfYear, endOfYear } from 'date-fns';
+import { Injectable, inject } from '@angular/core';
+import { AttendanceRepository } from '../../../core/repositories/attendance.repository';
+import { WorkLogRepository } from '../../../core/repositories/work-log.repository';
+import { Attendance, AttendanceBackupData } from '../../../core/models/attendance.model';
+import { calculateWorkingMinutes } from '../../../core/utils/format.utils';
+import { format, parseISO, startOfMonth } from 'date-fns';
+import { MonthlyStatistics } from '../models/attendance.model';
 
 @Injectable({ providedIn: 'root' })
 export class AttendanceService {
+  private attendanceRepo = inject(AttendanceRepository);
+  private workLogRepo = inject(WorkLogRepository);
 
   async getTodayAttendance(): Promise<Attendance | undefined> {
     const today = this.getTodayString();
-    return db.attendance.where('date').equals(today).first();
+    return this.attendanceRepo.getByDate(today);
   }
 
   async getAttendanceHistory(): Promise<Attendance[]> {
-    return db.attendance.toArray();
+    return this.attendanceRepo.getAll();
   }
 
   async getAttendanceByDateRange(startDate: string, endDate: string): Promise<Attendance[]> {
-    return db.attendance
-      .where('date')
-      .between(startDate, endDate, true, true)
-      .toArray();
+    return this.attendanceRepo.getByRange(startDate, endDate);
   }
 
   async getAttendanceByDate(date: string): Promise<Attendance | undefined> {
-    return db.attendance.where('date').equals(date).first();
+    return this.attendanceRepo.getByDate(date);
   }
 
   async createPunchIn(): Promise<Attendance> {
@@ -46,7 +48,7 @@ export class AttendanceService {
       updatedAt: now
     };
 
-    const id = await db.attendance.add(attendance);
+    const id = await this.attendanceRepo.create(attendance);
     return { ...attendance, id };
   }
 
@@ -60,9 +62,9 @@ export class AttendanceService {
       throw new Error('No punch in found for today');
     }
 
-    const workingMinutes = this.calculateWorkingMinutes(existing.firstPunchIn, timeStr);
+    const workingMinutes = calculateWorkingMinutes(existing.firstPunchIn, timeStr);
 
-    await db.attendance.update(existing.id!, {
+    await this.attendanceRepo.update(existing.id!, {
       lastPunchOut: timeStr,
       workingMinutes,
       status: 'completed',
@@ -76,13 +78,6 @@ export class AttendanceService {
       status: 'completed',
       updatedAt: now
     };
-  }
-
-  calculateWorkingMinutes(punchIn: string, punchOut: string): number {
-    const [inH, inM] = punchIn.split(':').map(Number);
-    const [outH, outM] = punchOut.split(':').map(Number);
-    const totalMinutes = (outH * 60 + outM) - (inH * 60 + inM);
-    return Math.max(0, totalMinutes);
   }
 
   formatTime(time: string): string {
@@ -100,7 +95,7 @@ export class AttendanceService {
 
   async getMonthlyStatistics(startDate?: string, endDate?: string): Promise<MonthlyStatistics> {
     const start = startDate || format(startOfMonth(new Date()), 'yyyy-MM-dd');
-    const end = endDate || format(endOfMonth(new Date()), 'yyyy-MM-dd');
+    const end = endDate || format(new Date(), 'yyyy-MM-dd');
 
     const records = await this.getAttendanceByDateRange(start, end);
 
@@ -136,9 +131,9 @@ export class AttendanceService {
     };
   }
 
-  async exportAttendance(): Promise<any> {
-    const attendance = await db.attendance.toArray();
-    const workLogs = await db.workLogs.toArray();
+  async exportAttendance(): Promise<AttendanceBackupData> {
+    const attendance = await this.attendanceRepo.getAll();
+    const workLogs = await this.workLogRepo.getAll();
     return {
       version: '2.0',
       exportedAt: new Date().toISOString(),
@@ -147,13 +142,13 @@ export class AttendanceService {
     };
   }
 
-  async importAttendance(data: any): Promise<number> {
+  async importAttendance(data: AttendanceBackupData): Promise<number> {
     if (data.data?.attendance) {
-      await db.attendance.clear();
+      await this.attendanceRepo.clear();
       let count = 0;
       for (const record of data.data.attendance) {
         const { id, ...rest } = record;
-        await db.attendance.add(rest as Attendance);
+        await this.attendanceRepo.create(rest as Attendance);
         count++;
       }
       return count;
@@ -161,12 +156,16 @@ export class AttendanceService {
     return 0;
   }
 
+  async clearAll(): Promise<void> {
+    await this.attendanceRepo.clear();
+  }
+
   async getAttendanceById(id: number): Promise<Attendance | undefined> {
-    return db.attendance.get(id);
+    return this.attendanceRepo.getById(id);
   }
 
   async updateAttendance(id: number, data: Partial<Attendance>): Promise<void> {
-    await db.attendance.update(id, { ...data, updatedAt: new Date().toISOString() });
+    await this.attendanceRepo.update(id, { ...data, updatedAt: new Date().toISOString() });
   }
 
   async createAttendance(data: Partial<Attendance>): Promise<Attendance> {
@@ -180,7 +179,7 @@ export class AttendanceService {
       createdAt: now,
       updatedAt: now
     };
-    const id = await db.attendance.add(attendance);
+    const id = await this.attendanceRepo.create(attendance);
     return { ...attendance, id };
   }
 

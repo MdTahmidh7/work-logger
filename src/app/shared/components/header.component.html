@@ -1,54 +1,41 @@
-<mat-toolbar color="primary" class="header-toolbar">
+<header class="header">
   <div class="header-left">
-    <button mat-icon-button class="menu-toggle" *ngIf="false" (click)="toggleSidenav()">
-      <mat-icon>menu</mat-icon>
-    </button>
     <div class="brand">
-      <mat-icon class="brand-icon">schedule</mat-icon>
-      <span class="brand-text">{{ title }}</span>
+      <div class="brand-icon">
+        <mat-icon>schedule</mat-icon>
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">Work Logger</span>
+      </div>
     </div>
   </div>
 
-  <div class="header-content" *ngIf="false">
-    <h1 class="page-title">{{ title }}</h1>
-    <p class="page-subtitle">{{ subtitle }}</p>
-  </div>
+  <nav class="header-nav">
+    <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">
+      <mat-icon>dashboard</mat-icon>
+      <span>Dashboard</span>
+    </a>
+    <a routerLink="/work-log" routerLinkActive="active" class="nav-link">
+      <mat-icon>add_circle</mat-icon>
+      <span>Add Log</span>
+    </a>
+    <a routerLink="/attendance" routerLinkActive="active" class="nav-link">
+      <mat-icon>fingerprint</mat-icon>
+      <span>Attendance</span>
+    </a>
+    <a routerLink="/settings" routerLinkActive="active" class="nav-link">
+      <mat-icon>settings</mat-icon>
+      <span>Settings</span>
+    </a>
+  </nav>
 
   <div class="header-right">
-    <div class="stats-summary" *ngIf="false">
-      <div class="stat-item">
-        <mat-icon class="stat-icon">task_alt</mat-icon>
-        <span class="stat-value">{{ totalTasks }}</span>
-        <span class="stat-label">Tasks</span>
-      </div>
-      <div class="stat-item">
-        <mat-icon class="stat-icon">access_time</mat-icon>
-        <span class="stat-value">{{ totalHours.toFixed(1) }}</span>
-        <span class="stat-label">Hours</span>
-      </div>
-    </div>
-
+    <span class="user-email">{{ userEmail() }}</span>
     <button mat-icon-button class="theme-toggle" (click)="toggleTheme()">
-      <mat-icon>{{ currentTheme === 'light' ? 'dark_mode' : 'light_mode' }}</mat-icon>
+      <mat-icon>{{ isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
     </button>
-
-    <button mat-icon-button class="profile-menu" matMenuTriggerFor="userMenu">
-      <mat-icon>account_circle</mat-icon>
+    <button mat-icon-button class="logout-btn" (click)="logout()" matTooltip="Sign out">
+      <mat-icon>logout</mat-icon>
     </button>
-
-    <mat-menu #userMenu="matMenu">
-      <button mat-menu-item (click)="openHelp()">
-        <mat-icon>help</mat-icon>
-        <span>Help</span>
-      </button>
-      <button mat-menu-item (click)="openAbout()">
-        <mat-icon>info</mat-icon>
-        <span>About</span>
-      </button>
-    </mat-menu>
   </div>
-</mat-toolbar>
-
-<ng-content></ng-content>
-
-<router-outlet></router-outlet>
+</header>

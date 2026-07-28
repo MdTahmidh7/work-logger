@@ -1,0 +1,9 @@
+    <div class="stat-card" [style.background]="data().cardBg || ''">
+      <div class="stat-header">
+        <div class="stat-icon" [style.background]="data().iconBg">
+          <mat-icon [style.color]="data().iconColor">{{ data().icon }}</mat-icon>
+        </div>
+      </div>
+      <div class="stat-value" [style.color]="data().valueColor || ''">{{ data().value }}</div>
+      <div class="stat-label">{{ data().label }}</div>
+    </div>

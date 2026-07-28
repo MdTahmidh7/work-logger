@@ -1,0 +1,27 @@
+    <div class="action-content">
+      <div class="action-top">
+        <div class="icon-circle" [class.punch-in-circle]="!attendance()" [class.punch-out-circle]="!!attendance()">
+          <mat-icon>{{ attendance() ? 'logout' : 'login' }}</mat-icon>
+        </div>
+        <div class="action-info">
+          @if (attendance()?.lastPunchOut) {
+            <span class="info-label">Last Punch Out</span>
+            <span class="info-time">{{ formatTime(attendance()!.lastPunchOut!) }}</span>
+            <span class="info-date">{{ formatDate() }}</span>
+          } @else if (attendance()) {
+            <span class="info-label">Last Punch In</span>
+            <span class="info-time">{{ formatTime(attendance()!.firstPunchIn) }}</span>
+            <span class="info-date">{{ formatDate() }}</span>
+          } @else {
+            <span class="info-label">No attendance today</span>
+            <span class="info-time">--</span>
+            <span class="info-date">{{ formatDate() }}</span>
+          }
+        </div>
+      </div>
+      <button class="action-btn" [class.punch-in]="!attendance()" [class.punch-out]="!!attendance()"
+              (click)="action.emit()">
+        <mat-icon>fingerprint</mat-icon>
+        <span>{{ attendance() ? 'Punch Out' : 'Punch In' }}</span>
+      </button>
+    </div>

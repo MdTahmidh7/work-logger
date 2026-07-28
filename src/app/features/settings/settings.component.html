@@ -1,0 +1,197 @@
+    <div class="settings-wrapper">
+      <div class="settings">
+        <div class="page-header">
+          <h1>Settings</h1>
+          <p class="subtitle">Manage your data, exports, and preferences</p>
+        </div>
+
+        @if (hasLocalData()) {
+          <div class="migration-section">
+            <div class="section-label">
+              <mat-icon>sync</mat-icon>
+              <span>Migrate Local Data</span>
+            </div>
+            <div class="setting-card migration-card">
+              <div class="card-icon migrate-icon">
+                <mat-icon>cloud_upload</mat-icon>
+              </div>
+              <div class="card-content">
+                <h3>Import Browser Data to Cloud</h3>
+                <p>You have {{ localCounts().workLogs }} work logs and {{ localCounts().attendance }} attendance records stored locally in your browser. Migrate them to the cloud to access from any device.</p>
+                <div class="migration-actions">
+                  <button class="action-btn migrate-btn" (click)="migrateData()" [disabled]="migrating()">
+                    @if (migrating()) {
+                      <mat-icon class="spinner">sync</mat-icon>
+                      Migrating...
+                    } @else {
+                      <mat-icon>cloud_upload</mat-icon>
+                      Migrate to Cloud
+                    }
+                  </button>
+                  <button class="action-btn clear-local-btn" (click)="clearLocalData()">
+                    <mat-icon>delete_outline</mat-icon>
+                    Discard Local Data
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+
+        <div class="section-label">
+          <mat-icon>download</mat-icon>
+          <span>Export to Excel</span>
+        </div>
+
+        <div class="settings-grid">
+          <div class="setting-card">
+            <div class="card-icon work-icon">
+              <mat-icon>table_chart</mat-icon>
+            </div>
+            <div class="card-content">
+              <h3>Export Work Logs</h3>
+              <p>Download work logs as Excel file for the selected date range.</p>
+              <div class="download-row">
+                <div class="date-input-group">
+                  <label>From</label>
+                  <input type="date" [value]="workLogStart()" [max]="workLogEnd()" (change)="onWorkLogStartChange($event)">
+                </div>
+                <div class="date-input-group">
+                  <label>To</label>
+                  <input type="date" [value]="workLogEnd()" [max]="maxDate()" (change)="onWorkLogEndChange($event)">
+                </div>
+                <button class="action-btn export-work-btn" (click)="downloadWorkLogExcel()">
+                  <mat-icon>download</mat-icon>
+                  Download
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="setting-card">
+            <div class="card-icon att-icon">
+              <mat-icon>event_note</mat-icon>
+            </div>
+            <div class="card-content">
+              <h3>Export Attendance</h3>
+              <p>Download attendance records as Excel file for the selected date range.</p>
+              <div class="download-row">
+                <div class="date-input-group">
+                  <label>From</label>
+                  <input type="date" [value]="attendanceStart()" [max]="attendanceEnd()" (change)="onAttendanceStartChange($event)">
+                </div>
+                <div class="date-input-group">
+                  <label>To</label>
+                  <input type="date" [value]="attendanceEnd()" [max]="maxDate()" (change)="onAttendanceEndChange($event)">
+                </div>
+                <button class="action-btn export-att-btn" (click)="downloadAttendanceExcel()">
+                  <mat-icon>download</mat-icon>
+                  Download
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-label">
+          <mat-icon>sync</mat-icon>
+          <span>Backup & Restore</span>
+        </div>
+
+        <div class="settings-grid">
+          <div class="setting-card">
+            <div class="card-icon export-icon">
+              <mat-icon>cloud_upload</mat-icon>
+            </div>
+            <div class="card-content">
+              <h3>Export JSON Backup</h3>
+              <p>Download all your work logs and attendance records as a JSON backup file.</p>
+              <button class="action-btn backup-btn" (click)="exportData()">
+                <mat-icon>download</mat-icon>
+                Export Data
+              </button>
+            </div>
+          </div>
+
+          <div class="setting-card">
+            <div class="card-icon import-icon">
+              <mat-icon>cloud_download</mat-icon>
+            </div>
+            <div class="card-content">
+              <h3>Import JSON Backup</h3>
+              <p>Restore work logs and attendance from a previously exported backup file.</p>
+              <input type="file" #fileInput accept=".json" (change)="onFileSelected($event)" style="display:none">
+              <button class="action-btn import-btn" (click)="fileInput.click()">
+                <mat-icon>upload</mat-icon>
+                Import Data
+              </button>
+            </div>
+          </div>
+        </div>
+
+        @if (previewData()) {
+          <div class="preview-section">
+            <div class="preview-header">
+              <mat-icon>info</mat-icon>
+              <span>Backup Preview</span>
+            </div>
+            <div class="preview-body">
+              <div class="preview-grid">
+                <div class="preview-stat">
+                  <span class="stat-num">{{ previewData()!.data.workLogs.length || 0 }}</span>
+                  <span class="stat-desc">Work Logs</span>
+                </div>
+                <div class="preview-stat">
+                  <span class="stat-num">{{ previewData()!.data.attendance.length || 0 }}</span>
+                  <span class="stat-desc">Attendance Records</span>
+                </div>
+                <div class="preview-stat">
+                  <span class="stat-num">{{ previewData()!.version }}</span>
+                  <span class="stat-desc">Version</span>
+                </div>
+                <div class="preview-stat">
+                  <span class="stat-num">{{ formatDate(previewData()!.exportedAt) }}</span>
+                  <span class="stat-desc">Exported</span>
+                </div>
+              </div>
+              <div class="preview-actions">
+                <button class="action-btn cancel-btn" (click)="previewData.set(null)">
+                  Cancel
+                </button>
+                <button class="action-btn confirm-btn" (click)="confirmImport()">
+                  <mat-icon>check</mat-icon>
+                  Confirm Import
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+
+        <div class="danger-zone">
+          <div class="danger-header">
+            <div class="card-icon danger-icon">
+              <mat-icon>warning</mat-icon>
+            </div>
+            <div>
+              <h3>Danger Zone</h3>
+              <p>Irreversible actions that permanently delete your data.</p>
+            </div>
+          </div>
+          <div class="danger-content">
+            <div class="danger-item">
+              <div class="danger-info">
+                <mat-icon>delete_sweep</mat-icon>
+                <div>
+                  <span class="danger-title">Clear All Data</span>
+                  <span class="danger-desc">Permanently delete all work logs and attendance records.</span>
+                </div>
+              </div>
+              <button class="action-btn danger-btn" (click)="clearAll()">
+                <mat-icon>delete_forever</mat-icon>
+                Clear All
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>

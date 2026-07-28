@@ -1,123 +1,196 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { db } from '../../core/database/database.service';
+import { WorkLogService } from '../work-log/services/work-log.service';
 import { AttendanceService } from '../attendance/services/attendance.service';
 import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { DateUtilsService } from '../../core/services/date-utils.service';
+import { DataMigrationService } from '../../core/services/data-migration.service';
 import { AttendanceBackupData } from '../attendance/models/attendance.model';
+import { WorkLog, BackupData } from '../../core/models/work-log.model';
+import { formatTime, formatWorkingHoursHM } from '../../core/utils/format.utils';
+import { format, subDays, parseISO } from 'date-fns';
+import * as XLSX from 'xlsx';
 
 @Component({
   standalone: true,
   selector: 'app-settings',
   imports: [CommonModule, MatIconModule, MatButtonModule],
-  template: `
-    <div class="settings-page">
-      <div class="page-header">
-        <h1>Settings</h1>
-        <p class="subtitle">Manage your data and preferences</p>
-      </div>
-
-      <div class="settings-sections">
-        <div class="section-card">
-          <div class="section-icon" style="background: rgba(0,122,255,0.1);">
-            <mat-icon style="color: var(--pwl-primary);">backup</mat-icon>
-          </div>
-          <div class="section-content">
-            <h3>Export Data</h3>
-            <p>Download all your work logs and attendance records as a JSON backup file.</p>
-            <button mat-raised-button color="primary" (click)="exportData()">
-              <mat-icon>download</mat-icon> Export Backup
-            </button>
-          </div>
-        </div>
-
-        <div class="section-card">
-          <div class="section-icon" style="background: rgba(52,199,89,0.1);">
-            <mat-icon style="color: var(--pwl-success);">restore</mat-icon>
-          </div>
-          <div class="section-content">
-            <h3>Import Data</h3>
-            <p>Restore work logs and attendance from a previously exported backup file.</p>
-            <input type="file" #fileInput accept=".json" (change)="onFileSelected($event)" style="display:none">
-            <button mat-raised-button color="primary" (click)="fileInput.click()">
-              <mat-icon>upload</mat-icon> Import Backup
-            </button>
-            @if (previewData()) {
-              <div class="preview-card">
-                <h4>Preview</h4>
-                <div class="preview-stats">
-                  <span>{{ previewData()!.data.workLogs.length }} work logs</span>
-                  <span>{{ previewData()!.data.attendance.length }} attendance records</span>
-                  <span>Exported: {{ formatDate(previewData()!.exportedAt) }}</span>
-                  <span>Version: {{ previewData()!.version }}</span>
-                </div>
-                <div class="preview-actions">
-                  <button mat-stroked-button (click)="previewData.set(null)">Cancel</button>
-                  <button mat-raised-button color="primary" (click)="confirmImport()">Confirm Import</button>
-                </div>
-              </div>
-            }
-          </div>
-        </div>
-
-        <div class="section-card danger">
-          <div class="section-icon" style="background: rgba(255,59,48,0.1);">
-            <mat-icon style="color: var(--pwl-danger);">delete_forever</mat-icon>
-          </div>
-          <div class="section-content">
-            <h3>Clear All Data</h3>
-            <p>Permanently delete all work logs and attendance records. This action cannot be undone.</p>
-            <button mat-stroked-button (click)="clearAll()" style="color:var(--pwl-danger);border-color:var(--pwl-danger);">
-              <mat-icon>delete</mat-icon> Clear All Data
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `,
-  styles: [`
-    .settings-page { max-width: 700px; margin: 0 auto; padding-top: 90px; padding-left: 20px; padding-right: 20px; }
-    .page-header { margin-bottom: 32px; }
-    .page-header h1 { font-size: 28px; font-weight: 700; }
-    .subtitle { color: var(--pwl-text-secondary); font-size: 15px; margin-top: 4px; }
-
-    .settings-sections { display: flex; flex-direction: column; gap: 16px; }
-
-    .section-card {
-      display: flex; gap: 20px; padding: 24px;
-      background: var(--pwl-surface); border-radius: 16px; border: 1px solid var(--pwl-divider);
-      transition: all 0.2s;
-    }
-    .section-card:hover { box-shadow: none; }
-
-    .section-icon {
-      width: 48px; height: 48px; border-radius: 14px;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-
-    .section-content { flex: 1; }
-    .section-content h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
-    .section-content p { color: var(--pwl-text-secondary); font-size: 14px; margin-bottom: 16px; line-height: 1.5; }
-    .section-content button { display: inline-flex; align-items: center; gap: 6px; }
-
-    .preview-card {
-      margin-top: 16px; padding: 16px; background: var(--pwl-surface-variant);
-      border-radius: 12px; border: 1px solid var(--pwl-divider);
-    }
-    .preview-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
-    .preview-stats { display: flex; gap: 16px; font-size: 13px; color: var(--pwl-text-secondary); margin-bottom: 12px; flex-wrap: wrap; }
-    .preview-actions { display: flex; gap: 8px; }
-  `]
+  templateUrl: './settings.component.html',
+  styleUrls: ['./settings.component.scss']
 })
-export class SettingsComponent {
+export class SettingsComponent implements OnInit {
   private confirm = inject(ConfirmDialogService);
   private notify = inject(NotificationService);
   private attendanceService = inject(AttendanceService);
+  private workLogService = inject(WorkLogService);
+  private dateUtils = inject(DateUtilsService);
+  private migrationService = inject(DataMigrationService);
+
+  hasLocalData = signal(false);
+  localCounts = signal({ workLogs: 0, attendance: 0 });
+  migrating = signal(false);
+
+  ngOnInit(): void {
+    this.checkLocalData();
+  }
+
+  async checkLocalData(): Promise<void> {
+    const hasData = await this.migrationService.hasLocalData();
+    this.hasLocalData.set(hasData);
+    if (hasData) {
+      this.localCounts.set(await this.migrationService.getLocalDataCounts());
+    }
+  }
+
+  async migrateData(): Promise<void> {
+    const counts = this.localCounts();
+    const total = counts.workLogs + counts.attendance;
+    const ok = await this.confirm.confirm(
+      'Migrate Local Data',
+      `This will import ${counts.workLogs} work logs and ${counts.attendance} attendance records from your browser's local storage to the cloud. Your existing cloud data will not be affected. Continue?`
+    );
+    if (!ok) return;
+
+    this.migrating.set(true);
+    try {
+      const result = await this.migrationService.migrateToCloud();
+      if (result.errors.length > 0) {
+        this.notify.warning(`Migration completed with some errors: ${result.errors.join(', ')}`);
+      } else {
+        this.notify.success(`Migrated ${result.workLogsImported} work logs and ${result.attendanceImported} attendance records to the cloud!`);
+      }
+      await this.checkLocalData();
+    } catch (e) {
+      this.notify.error('Migration failed: ' + (e instanceof Error ? e.message : 'Unknown error'));
+    } finally {
+      this.migrating.set(false);
+    }
+  }
+
+  async clearLocalData(): Promise<void> {
+    const ok = await this.confirm.confirm(
+      'Clear Local Data',
+      'This will permanently delete all data stored in your browser. Your cloud data is safe. Continue?'
+    );
+    if (ok) {
+      await this.migrationService.clearLocalData();
+      this.notify.success('Local data cleared');
+      await this.checkLocalData();
+    }
+  }
 
   previewData = signal<AttendanceBackupData | null>(null);
   private pendingData: AttendanceBackupData | null = null;
+
+  maxDate = signal(format(new Date(), 'yyyy-MM-dd'));
+  workLogStart = signal(format(subDays(new Date(), 29), 'yyyy-MM-dd'));
+  workLogEnd = signal(format(new Date(), 'yyyy-MM-dd'));
+  attendanceStart = signal(format(subDays(new Date(), 29), 'yyyy-MM-dd'));
+  attendanceEnd = signal(format(new Date(), 'yyyy-MM-dd'));
+
+  onWorkLogStartChange(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    if (value) this.workLogStart.set(value);
+  }
+
+  onWorkLogEndChange(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    if (value) this.workLogEnd.set(value);
+  }
+
+  onAttendanceStartChange(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    if (value) this.attendanceStart.set(value);
+  }
+
+  onAttendanceEndChange(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    if (value) this.attendanceEnd.set(value);
+  }
+
+  async downloadWorkLogExcel(): Promise<void> {
+    try {
+      const logs = await this.workLogService.getByRange(this.workLogStart(), this.workLogEnd());
+      if (logs.length === 0) {
+        this.notify.warning('No work logs found for the selected date range');
+        return;
+      }
+
+      const groups: { [key: string]: WorkLog[] } = {};
+      for (const log of logs) {
+        if (!groups[log.date]) groups[log.date] = [];
+        groups[log.date].push(log);
+      }
+
+      const rows = Object.keys(groups)
+        .sort((a, b) => b.localeCompare(a))
+        .flatMap(date => {
+          const dayLogs = groups[date];
+          const dayName = this.dateUtils.getDayName(date);
+          const totalHours = this.dateUtils.formatDuration(dayLogs.reduce((s, l) => s + l.durationMinutes, 0));
+          return dayLogs.map(log => ({
+            'Date': date,
+            'Day': dayName,
+            'Task Item': log.title,
+            'Details': log.details || '',
+            'Log Hours': this.dateUtils.formatDuration(log.durationMinutes),
+            'Log Minutes': log.durationMinutes,
+            'Total Day Hours': totalHours
+          }));
+        });
+
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Work Logs');
+      ws['!cols'] = [
+        { wch: 12 }, { wch: 10 }, { wch: 30 }, { wch: 30 },
+        { wch: 10 }, { wch: 12 }, { wch: 14 }
+      ];
+
+      const fileName = `work-logs-${this.workLogStart()}-to-${this.workLogEnd()}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      this.notify.success(`Exported ${logs.length} work logs`);
+    } catch {
+      this.notify.error('Failed to export work logs');
+    }
+  }
+
+  async downloadAttendanceExcel(): Promise<void> {
+    try {
+      const records = await this.attendanceService.getAttendanceByDateRange(
+        this.attendanceStart(), this.attendanceEnd()
+      );
+      if (records.length === 0) {
+        this.notify.warning('No attendance records found for the selected date range');
+        return;
+      }
+
+      const rows = records.map(r => ({
+        'Date': r.date,
+        'Day': parseISO(r.date).toLocaleDateString('en-US', { weekday: 'short' }),
+        'First Punch In': r.firstPunchIn ? formatTime(r.firstPunchIn) : '--',
+        'Last Punch Out': r.lastPunchOut ? formatTime(r.lastPunchOut) : '--',
+        'Working Hours': formatWorkingHoursHM(r.workingMinutes),
+        'Status': r.workingMinutes >= 420 ? 'Present' : r.firstPunchIn ? 'NFOH' : 'Absent'
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
+      ws['!cols'] = [
+        { wch: 12 }, { wch: 8 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 10 }
+      ];
+
+      const fileName = `attendance-${this.attendanceStart()}-to-${this.attendanceEnd()}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      this.notify.success(`Exported ${records.length} attendance records`);
+    } catch {
+      this.notify.error('Failed to export attendance records');
+    }
+  }
 
   async exportData(): Promise<void> {
     try {
@@ -130,31 +203,37 @@ export class SettingsComponent {
       a.download = `worklog-backup-${new Date().toISOString().split('T')[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      this.notify.success('Backup exported successfully');
-    } catch {
-      this.notify.error('Failed to export backup');
+      const logCount = data.data?.workLogs?.length || 0;
+      const attCount = data.data?.attendance?.length || 0;
+      this.notify.success(`Backup exported: ${logCount} work logs, ${attCount} attendance records`);
+    } catch (e) {
+      console.error('Export error:', e);
+      this.notify.error('Failed to export backup: ' + (e instanceof Error ? e.message : 'Unknown error'));
     }
   }
 
   onFileSelected(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const data = JSON.parse(reader.result as string) as AttendanceBackupData;
-        if (!data.data?.workLogs && !data.data?.attendance) {
-          this.notify.error('Invalid backup file format');
+        const data = JSON.parse(reader.result as string);
+        if (!data?.data) {
+          this.notify.error('Invalid backup file: missing data field');
           return;
         }
         this.pendingData = data;
         this.previewData.set(data);
-      } catch {
-        this.notify.error('Invalid JSON file');
+      } catch (e) {
+        console.error('Parse error:', e);
+        this.notify.error('Failed to parse JSON file');
       }
     };
     reader.readAsText(file);
+    input.value = '';
   }
 
   async confirmImport(): Promise<void> {
@@ -168,17 +247,22 @@ export class SettingsComponent {
     );
     if (ok) {
       try {
-        if (this.pendingData.data.workLogs) {
-          await db.importLogs({ ...this.pendingData, data: { workLogs: this.pendingData.data.workLogs } } as any);
+        let importedWorkLogs = 0;
+        let importedAttendance = 0;
+
+        if (workLogCount > 0) {
+          importedWorkLogs = await this.workLogService.importLogs(this.pendingData as BackupData);
         }
-        if (this.pendingData.data.attendance) {
-          await this.attendanceService.importAttendance(this.pendingData);
+        if (attendanceCount > 0) {
+          importedAttendance = await this.attendanceService.importAttendance(this.pendingData);
         }
-        this.notify.success(`Imported ${workLogCount} work logs and ${attendanceCount} attendance records`);
+
+        this.notify.success(`Import complete: ${importedWorkLogs} work logs and ${importedAttendance} attendance records`);
         this.previewData.set(null);
         this.pendingData = null;
-      } catch {
-        this.notify.error('Failed to import data');
+      } catch (e) {
+        console.error('Import error:', e);
+        this.notify.error('Import failed: ' + (e instanceof Error ? e.message : 'Unknown error'));
       }
     }
   }
@@ -189,12 +273,18 @@ export class SettingsComponent {
       'This will permanently delete all your work logs and attendance records. This cannot be undone.'
     );
     if (ok) {
-      await db.clearAll();
-      this.notify.success('All data cleared');
+      try {
+        await this.workLogService.clearAll();
+        await this.attendanceService.clearAll();
+        this.notify.success('All data cleared successfully');
+      } catch (e) {
+        console.error('Clear error:', e);
+        this.notify.error('Failed to clear data: ' + (e instanceof Error ? e.message : 'Unknown error'));
+      }
     }
   }
 
   formatDate(date: string): string {
-    return new Date(date).toLocaleDateString();
+    return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 }

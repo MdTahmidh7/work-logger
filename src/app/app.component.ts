@@ -1,30 +1,23 @@
-import { Component } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { HeaderComponent } from './shared/components/header.component';
+import { AuthService } from './core/services/auth.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   standalone: true,
   selector: 'pwl-root',
-  imports: [RouterOutlet, HeaderComponent],
-  template: `
-    <app-header />
-    <main>
-      <router-outlet />
-    </main>
-  `,
-  styles: [`
-    main {
-      min-height: 100vh;
-      padding: 0 24px 32px;
-    }
-
-    @media (max-width: 768px) {
-      main {
-        padding: 0 12px 20px;
-      }
-    }
-  `]
+  imports: [CommonModule, RouterOutlet, HeaderComponent],
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.scss']
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   title = 'Personal Work Logger';
+  private authService = inject(AuthService);
+
+  get showHeader(): boolean {
+    return this.authService.isAuthenticated();
+  }
+
+  ngOnInit(): void {}
 }

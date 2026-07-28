@@ -1,0 +1,75 @@
+    .history-table { width: 100%; }
+
+    .table-header {
+      display: grid;
+      grid-template-columns: 100px 90px 100px 100px 100px 100px;
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--pwl-divider);
+      background: var(--pwl-surface-variant);
+    }
+
+    .th {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--pwl-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .table-row {
+      display: grid;
+      grid-template-columns: 100px 90px 100px 100px 100px 100px;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--pwl-divider);
+      align-items: center;
+      transition: background 0.2s;
+    }
+
+    .table-row:last-child { border-bottom: none; }
+    .table-row:hover { filter: brightness(0.97); }
+
+    .table-row.workday { background: rgba(13, 148, 136, 0.04); }
+    .table-row.workday:hover { background: rgba(13, 148, 136, 0.08); }
+    .table-row.friday { background: rgba(255, 204, 0, 0.12); }
+    .table-row.friday:hover { background: rgba(255, 204, 0, 0.18); }
+    .table-row.saturday { background: rgba(255, 107, 107, 0.12); }
+    .table-row.saturday:hover { background: rgba(255, 107, 107, 0.18); }
+
+    .td { font-size: 13px; color: var(--pwl-text-primary); }
+
+    .day-cell { color: var(--pwl-text-secondary); font-size: 12px; }
+    .day-cell.holiday { font-weight: 600; }
+
+    .punch-cell { font-weight: 500; }
+
+    .hours-badge {
+      display: inline-block; padding: 3px 8px; border-radius: 6px;
+      font-size: 12px; font-weight: 600;
+      background: var(--pwl-primary-light); color: var(--pwl-primary);
+    }
+    .hours-badge.friday-badge { background: rgba(255, 204, 0, 0.15); color: #b38600; }
+    .hours-badge.saturday-badge { background: rgba(255, 107, 107, 0.15); color: #cc3333; }
+
+    .status-badge {
+      display: inline-block; padding: 3px 8px; border-radius: 6px;
+      font-size: 11px; font-weight: 600; text-transform: capitalize;
+    }
+    .status-badge.not_started { background: rgba(156, 163, 175, 0.15); color: #6b7280; }
+    .status-badge.working { background: rgba(13, 148, 136, 0.15); color: #0d9488; }
+    .status-badge.completed { background: rgba(34, 197, 94, 0.15); color: #16a34a; }
+
+    .empty-state {
+      text-align: center; padding: 40px 20px;
+      background: var(--pwl-surface); border-radius: 14px; border: 1px solid var(--pwl-divider);
+    }
+    .empty-state mat-icon { font-size: 40px; width: 40px; height: 40px; color: var(--pwl-text-tertiary); margin-bottom: 10px; }
+    .empty-state h3 { font-size: 14px; font-weight: 600; color: var(--pwl-text-primary); margin-bottom: 4px; }
+    .empty-state p { color: var(--pwl-text-secondary); font-size: 13px; }
+
+    @media (max-width: 768px) {
+      .table-header, .table-row {
+        grid-template-columns: 80px 70px 90px 90px 90px 90px;
+        padding: 8px 14px;
+        font-size: 11px;
+      }
+    }

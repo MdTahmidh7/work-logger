@@ -1,0 +1,102 @@
+    <div class="history-wrapper">
+      <div class="history-page">
+        <div class="page-header">
+          <div>
+            <h1>Attendance History</h1>
+            <p class="subtitle">{{ dayRows().length }} days</p>
+          </div>
+          <a routerLink="/attendance" class="back-btn">
+            <mat-icon>arrow_back</mat-icon>
+            Dashboard
+          </a>
+        </div>
+
+        <div class="filter-bar">
+          <div class="range-input">
+            <mat-icon>event</mat-icon>
+            <input type="date" [value]="filterStart()" [max]="filterEnd()" (change)="onFilterStartChange($event)" class="date-input">
+          </div>
+          <span class="range-sep">to</span>
+          <div class="range-input">
+            <mat-icon>event</mat-icon>
+            <input type="date" [value]="filterEnd()" [max]="maxDate()" (change)="onFilterEndChange($event)" class="date-input">
+          </div>
+          <span class="days-info">{{ dayRows().length }} days</span>
+        </div>
+
+        <div class="stats-grid">
+          <app-attendance-stat-card [data]="statsData()[0]" />
+          <app-attendance-stat-card [data]="statsData()[1]" />
+          <app-attendance-stat-card [data]="statsData()[2]" />
+          <app-attendance-stat-card [data]="statsData()[3]" />
+        </div>
+
+        <div class="history-section">
+          <div class="table-header">
+            <div class="th col-icon"></div>
+            <div class="th col-date">Date</div>
+            <div class="th col-day">Day</div>
+            <div class="th col-punch-in">Punch In</div>
+            <div class="th col-punch-out">Punch Out</div>
+            <div class="th col-hours">Working Hour</div>
+            <div class="th col-status">Status</div>
+            <div class="th col-edit"></div>
+          </div>
+          @for (row of dayRows(); track row.date) {
+            <div class="table-row"
+                 [class.weekend]="row.isFriday || row.isSaturday"
+                 [class.status-present]="row.attendance && row.getStatus() === 'Present'"
+                 [class.status-nfoh]="row.attendance && row.getStatus() === 'NFOH'"
+                 [class.status-absent]="!row.attendance"
+                 [class.today]="row.isToday">
+              <div class="td col-icon">
+                @if (row.attendance) {
+                  <div class="status-dot" [class]="row.getStatus()"></div>
+                } @else {
+                  <div class="status-dot absent"></div>
+                }
+              </div>
+              <div class="td col-date">
+                <span class="date-text">{{ formatDate(row.date) }}</span>
+              </div>
+              <div class="td col-day" [class.holiday]="row.isFriday || row.isSaturday">
+                {{ row.dayName }}
+              </div>
+              <div class="td col-punch-in">
+                @if (row.attendance) {
+                  <mat-icon class="cell-icon punch-in-icon">login</mat-icon>
+                  <span>{{ formatTime(row.attendance.firstPunchIn) }}</span>
+                } @else {
+                  <span class="no-data">--</span>
+                }
+              </div>
+              <div class="td col-punch-out">
+                @if (row.attendance?.lastPunchOut) {
+                  <mat-icon class="cell-icon punch-out-icon">logout</mat-icon>
+                  <span>{{ formatTime(row.attendance!.lastPunchOut!) }}</span>
+                } @else {
+                  <span class="no-data">--</span>
+                }
+              </div>
+              <div class="td col-hours">
+                @if (row.attendance && row.attendance.workingMinutes > 0) {
+                  <span class="hours-badge">{{ formatWorkingHours(row.attendance.workingMinutes) }}</span>
+                } @else {
+                  <span class="no-data">--</span>
+                }
+              </div>
+              <div class="td col-status">
+                <span class="status-badge" [class]="row.getStatus()">
+                  {{ row.getStatus() }}
+                </span>
+              </div>
+              <div class="td col-edit">
+                <a [routerLink]="['/attendance/edit', row.date]" class="edit-link">
+                  <mat-icon class="edit-icon">edit</mat-icon>
+                </a>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>

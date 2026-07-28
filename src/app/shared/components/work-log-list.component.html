@@ -1,0 +1,36 @@
+<div class="work-log-list">
+  @if (logs().length === 0) {
+    <div class="empty-state">
+      <mat-icon>work_off</mat-icon>
+      <h3>No work logs found</h3>
+      <p>Start tracking your work by adding your first log entry.</p>
+      <a routerLink="/work-log" class="add-btn">
+        <mat-icon>add</mat-icon>
+        Add Work Log
+      </a>
+    </div>
+  } @else {
+    @for (log of logs(); track log.id) {
+      <div class="log-entry">
+        <div class="log-main">
+          <div class="log-title">{{ log.title }}</div>
+          @if (log.details) {
+            <div class="log-details">{{ log.details }}</div>
+          }
+          <div class="log-date">{{ log.date }}</div>
+        </div>
+        <div class="log-meta">
+          <span class="duration">{{ formatDuration(log.durationMinutes) }}</span>
+          <div class="log-actions">
+            <a [routerLink]="['/edit', log.id]" mat-icon-button class="action-btn">
+              <mat-icon>edit</mat-icon>
+            </a>
+            <button mat-icon-button class="action-btn delete-btn" (click)="onDelete.emit(log.id!)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  }
+</div>

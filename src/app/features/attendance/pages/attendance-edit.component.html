@@ -1,0 +1,51 @@
+    <div class="edit-wrapper">
+      <div class="edit-container">
+        <div class="page-header">
+          <a routerLink="/attendance" class="back-link">
+            <mat-icon>arrow_back</mat-icon>
+          </a>
+          <div>
+            <h1>Edit Attendance</h1>
+            <p class="subtitle">{{ formatDate() }}</p>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <form [formGroup]="form" (ngSubmit)="onSubmit()">
+            <div class="time-group">
+              <label class="field-label">Punch In</label>
+              <div class="time-input-wrapper">
+                <mat-icon class="field-icon punch-in-icon">login</mat-icon>
+                <input type="time" formControlName="firstPunchIn" class="native-time-input">
+              </div>
+            </div>
+
+            <div class="time-group">
+              <label class="field-label">Punch Out</label>
+              <div class="time-input-wrapper">
+                <mat-icon class="field-icon punch-out-icon">logout</mat-icon>
+                <input type="time" formControlName="lastPunchOut" class="native-time-input">
+              </div>
+            </div>
+
+            <div class="working-hour-preview">
+              <mat-icon>schedule</mat-icon>
+              <span>Working Hour: <strong>{{ calculatedWorkingHours() }}</strong></span>
+            </div>
+
+            <div class="status-preview" [class]="getStatusClass()">
+              <mat-icon>{{ getStatusIcon() }}</mat-icon>
+              <span>Status: <strong>{{ getStatus() }}</strong></span>
+            </div>
+
+            <div class="actions">
+              <a routerLink="/attendance" class="cancel-btn">Cancel</a>
+              <button type="submit" class="save-btn" [disabled]="saving()">
+                <mat-icon>save</mat-icon>
+                {{ saving() ? 'Saving...' : 'Save Changes' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
