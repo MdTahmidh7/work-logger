@@ -26,8 +26,10 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Install dependencies
-        run: npm install --legacy-peer-deps
+      - name: Remove lockfile and install fresh
+        run: |
+          rm -f package-lock.json
+          npm install
 
       - name: Create environment files from secrets
         run: |
