@@ -1,0 +1,79 @@
+    <div class="dashboard-wrapper">
+      <div class="dashboard">
+        <div class="top-bar">
+          <div class="sk-block sk-w28 sk-h32 sk-radius"></div>
+        </div>
+
+        <div class="main-content">
+          <div class="action-section skeleton-action">
+            <div class="sk-circle-lg"></div>
+            <div class="sk-block sk-w40 sk-mt8"></div>
+          </div>
+          <div class="card-section skeleton-card">
+            <div class="sk-block sk-w50 sk-mb8"></div>
+            <div class="sk-block sk-w70 sk-mb12"></div>
+            <div class="sk-row">
+              <div class="sk-block sk-w30 sk-h24"></div>
+              <div class="sk-block sk-w20 sk-h24"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="recent-section skeleton-card">
+          <div class="section-header">
+            <div class="header-left">
+              <div class="sk-icon"></div>
+              <div class="sk-block sk-w36"></div>
+            </div>
+            <div class="date-range-filter">
+              <div class="sk-block sk-w28 sk-h36 sk-radius"></div>
+              <div class="sk-block sk-w10 sk-h10"></div>
+              <div class="sk-block sk-w28 sk-h36 sk-radius"></div>
+            </div>
+          </div>
+          <div class="attendance-table">
+            @if (!responsive.isMobile()) {
+              <div class="table-header">
+                <div class="th"><div class="sk-block sk-w16 sk-h10"></div></div>
+                <div class="th"><div class="sk-block sk-w10 sk-h10"></div></div>
+                <div class="th"><div class="sk-block sk-w18 sk-h10"></div></div>
+                <div class="th"><div class="sk-block sk-w18 sk-h10"></div></div>
+                <div class="th"><div class="sk-block sk-w20 sk-h10"></div></div>
+                <div class="th"><div class="sk-block sk-w20 sk-h10"></div></div>
+                <div class="th"><div class="sk-block sk-w16 sk-h10"></div></div>
+                <div class="th"><div class="sk-block sk-w14 sk-h10"></div></div>
+              </div>
+              @for (i of [1,2,3,4,5]; track i) {
+              <div class="table-row skeleton-row">
+                <div class="td"><div class="sk-row-inline"><div class="sk-dot"></div><div class="sk-block sk-w24 sk-h12"></div></div></div>
+                <div class="td"><div class="sk-block sk-w10 sk-h12"></div></div>
+                <div class="td"><div class="sk-block sk-w16 sk-h12"></div></div>
+                <div class="td"><div class="sk-block sk-w16 sk-h12"></div></div>
+                <div class="td"><div class="sk-badge-skeleton"></div></div>
+                <div class="td"><div class="sk-badge-skeleton sk-alt"></div></div>
+                <div class="td"><div class="sk-badge-skeleton"></div></div>
+                <div class="td"><div class="sk-icon-sm"></div></div>
+              </div>
+              }
+            } @else {
+              @for (i of [1,2,3,4]; track i) {
+              <div class="att-card skeleton-att-card">
+                <div class="att-card-header">
+                  <div class="att-card-date">
+                    <div class="sk-dot"></div>
+                    <div class="sk-block sk-w28 sk-h12"></div>
+                    <div class="sk-block sk-w12 sk-h10"></div>
+                  </div>
+                  <div class="sk-badge-skeleton"></div>
+                </div>
+                <div class="att-card-row"><b><div class="sk-block sk-w16 sk-h10"></div></b> <span><div class="sk-block sk-w16 sk-h12"></div></span></div>
+                <div class="att-card-row"><b><div class="sk-block sk-w18 sk-h10"></div></b> <span><div class="sk-block sk-w16 sk-h12"></div></span></div>
+                <div class="att-card-row"><b><div class="sk-block sk-w18 sk-h10"></div></b> <span><div class="sk-badge-skeleton"></div></span></div>
+                <div class="att-card-row"><b><div class="sk-block sk-w14 sk-h10"></div></b> <span><div class="sk-badge-skeleton sk-alt"></div></span></div>
+              </div>
+              }
+            }
+          </div>
+        </div>
+      </div>
+    </div>

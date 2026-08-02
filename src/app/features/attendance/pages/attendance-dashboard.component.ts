@@ -10,6 +10,7 @@ import { Attendance } from '../models/attendance.model';
 import { NotificationService } from '../../../core/services/notification.service';
 import { DateUtilsService } from '../../../core/services/date-utils.service';
 import { ResponsiveService } from '../../../core/services/responsive.service';
+import { AttendanceDashboardSkeletonComponent } from '../../../shared/components/skeletons/attendance-dashboard-skeleton.component';
 import { WorkLogService } from '../../work-log/services/work-log.service';
 import { WorkLog } from '../../../core/models/work-log.model';
 import {
@@ -30,6 +31,7 @@ import {
     MatButtonModule,
     AttendanceActionButtonComponent,
     TodayAttendanceCardComponent,
+    AttendanceDashboardSkeletonComponent,
   ],
   templateUrl: './attendance-dashboard.component.html',
   styleUrls: ['./attendance-dashboard.component.scss'],
@@ -41,6 +43,8 @@ export class AttendanceDashboardPageComponent implements OnInit {
   private dateUtils = inject(DateUtilsService);
   private workLogService = inject(WorkLogService);
   responsive = inject(ResponsiveService);
+
+  loading = signal(true);
 
   todayAttendance = signal<Attendance | null>(null);
   attendanceMap = signal<Map<string, Attendance>>(new Map());
@@ -83,27 +87,32 @@ export class AttendanceDashboardPageComponent implements OnInit {
   }
 
   async loadData(): Promise<void> {
-    this.todayAttendance.set(
-      (await this.attendanceService.getTodayAttendance()) || null,
-    );
+    this.loading.set(true);
+    try {
+      this.todayAttendance.set(
+        (await this.attendanceService.getTodayAttendance()) || null,
+      );
 
-    const records = await this.attendanceService.getAttendanceByDateRange(
-      this.filterStart(),
-      this.filterEnd(),
-    );
+      const records = await this.attendanceService.getAttendanceByDateRange(
+        this.filterStart(),
+        this.filterEnd(),
+      );
 
-    const map = new Map<string, Attendance>();
-    for (const record of records) {
-      map.set(record.date, record);
+      const map = new Map<string, Attendance>();
+      for (const record of records) {
+        map.set(record.date, record);
+      }
+      this.attendanceMap.set(map);
+
+      const logs = await this.workLogService.getByRange(this.filterStart(), this.filterEnd());
+      const wlogMap = new Map<string, number>();
+      for (const log of logs) {
+        wlogMap.set(log.date, (wlogMap.get(log.date) || 0) + log.durationMinutes);
+      }
+      this.workLogMap.set(wlogMap);
+    } finally {
+      this.loading.set(false);
     }
-    this.attendanceMap.set(map);
-
-    const logs = await this.workLogService.getByRange(this.filterStart(), this.filterEnd());
-    const wlogMap = new Map<string, number>();
-    for (const log of logs) {
-      wlogMap.set(log.date, (wlogMap.get(log.date) || 0) + log.durationMinutes);
-    }
-    this.workLogMap.set(wlogMap);
   }
 
   onFilterStartChange(event: Event): void {

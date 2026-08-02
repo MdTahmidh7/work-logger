@@ -1,0 +1,51 @@
+    <div class="page page-skeleton">
+      <div class="skeleton-card sk-form-card">
+        <div class="sk-row sk-mb16">
+          <div class="sk-icon-lg"></div>
+          <div class="sk-block sk-w40 sk-h20"></div>
+        </div>
+        <div class="sk-block sk-w100 sk-h48 sk-mb12 sk-radius"></div>
+        <div class="sk-row sk-mb16">
+          <div class="sk-block sk-w45 sk-h48 sk-radius"></div>
+          <div class="sk-block sk-w25 sk-h48 sk-radius"></div>
+        </div>
+        <div class="sk-row sk-mb12">
+          @for (i of [1,2,3,4,5,6,7,8,9,10]; track i) {
+          <div class="sk-pill"></div>
+          }
+        </div>
+        <div class="sk-row sk-justify-end">
+          <div class="sk-block sk-w24 sk-h40 sk-radius"></div>
+        </div>
+      </div>
+
+      <div class="skeleton-card sk-list-section">
+        <div class="sk-row sk-mb16 sk-justify-between">
+          <div class="sk-block sk-w24 sk-h20"></div>
+          <div class="sk-block sk-w16 sk-h16"></div>
+        </div>
+        <div class="sk-row sk-mb16">
+          @for (i of [1,2,3,4,5]; track i) {
+          <div class="sk-pill"></div>
+          }
+        </div>
+        <div class="sk-table-skeleton">
+          <div class="sk-table-header">
+            <div class="sk-block sk-w16 sk-h10"></div>
+            <div class="sk-block sk-w14 sk-h10"></div>
+            <div class="sk-block sk-w30 sk-h10"></div>
+            <div class="sk-block sk-w18 sk-h10"></div>
+            <div class="sk-block sk-w16 sk-h10"></div>
+          </div>
+          @for (i of [1,2,3,4,5]; track i) {
+          <div class="sk-table-row">
+            <div class="sk-block sk-w20 sk-h12"></div>
+            <div class="sk-block sk-w16 sk-h12"></div>
+            <div class="sk-block sk-w70 sk-h12"></div>
+            <div class="sk-block sk-w18 sk-h12"></div>
+            <div class="sk-row"><div class="sk-icon-sm"></div><div class="sk-icon-sm"></div></div>
+          </div>
+          }
+        </div>
+      </div>
+    </div>

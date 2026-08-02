@@ -1,0 +1,115 @@
+@import '../../../../styles/skeleton';
+
+:host { display: block; }
+
+.dashboard-wrapper {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.dashboard { padding-top: 82px; }
+
+.top-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+.main-content {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.skeleton-action {
+  border-radius: 14px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.sk-circle-lg {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+}
+
+.card-section { padding: 20px; border-radius: 14px; }
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.header-left { display: flex; align-items: center; gap: 8px; }
+
+.date-range-filter { display: flex; align-items: center; gap: 8px; }
+
+.attendance-table { overflow: hidden; }
+
+.table-header {
+  display: grid;
+  grid-template-columns: 90px 60px 100px 100px 100px 100px 80px 60px;
+  padding: 10px 20px;
+  background: var(--pwl-surface-variant);
+  border-bottom: 1px solid var(--pwl-divider);
+  border-radius: 8px 8px 0 0;
+}
+
+.th {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--pwl-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.skeleton-row {
+  padding: 10px 20px;
+  display: grid;
+  grid-template-columns: 90px 60px 100px 100px 100px 100px 80px 60px;
+  align-items: center;
+  border-bottom: 1px solid var(--pwl-divider);
+}
+
+.skeleton-row:last-child { border-bottom: none; }
+
+.sk-alt { width: 60px; }
+
+.skeleton-att-card { border-bottom: 1px solid var(--pwl-divider); }
+
+.att-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.att-card-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.att-card-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+@media (max-width: 768px) {
+  .dashboard-wrapper { padding: 0 16px; }
+  .dashboard { padding-top: 72px; }
+  .main-content { grid-template-columns: 1fr; }
+  .table-header { display: none; }
+  .skeleton-row { display: none; }
+  .date-range-filter { display: none; }
+}

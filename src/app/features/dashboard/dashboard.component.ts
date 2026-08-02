@@ -9,6 +9,7 @@ import { ChartCardComponent } from '../../shared/components/chart-card.component
 import { DateFilterComponent } from '../../shared/components/date-filter.component';
 import { TodayAttendanceCardComponent } from '../attendance/components/today-attendance-card.component';
 import { AttendanceActionButtonComponent } from '../attendance/components/attendance-action-button.component';
+import { DashboardSkeletonComponent } from '../../shared/components/skeletons/dashboard-skeleton.component';
 import { DateUtilsService } from '../../core/services/date-utils.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ResponsiveService } from '../../core/services/responsive.service';
@@ -24,7 +25,8 @@ import { getDaysInMonth, parseISO } from 'date-fns';
   selector: 'app-dashboard',
   imports: [CommonModule, FormsModule, RouterModule, MatIconModule, MatButtonModule,
             StatisticCardComponent, ChartCardComponent, DateFilterComponent,
-            TodayAttendanceCardComponent, AttendanceActionButtonComponent],
+            TodayAttendanceCardComponent, AttendanceActionButtonComponent,
+            DashboardSkeletonComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })

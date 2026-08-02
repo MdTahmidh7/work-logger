@@ -8,6 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { DateFilterComponent } from '../../shared/components/date-filter.component';
+import { WorkLogFormSkeletonComponent } from '../../shared/components/skeletons/work-log-form-skeleton.component';
 import { WorkLogService } from './services/work-log.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
@@ -21,7 +22,7 @@ import { WorkLog } from '../../core/models/work-log.model';
   imports: [
     CommonModule, RouterModule, ReactiveFormsModule,
     MatIconModule, MatButtonModule, MatInputModule, MatFormFieldModule,
-    MatDatepickerModule, DateFilterComponent
+    MatDatepickerModule, DateFilterComponent, WorkLogFormSkeletonComponent
   ],
   templateUrl: './work-log-form.component.html',
   styleUrls: ['./work-log-form.component.scss']

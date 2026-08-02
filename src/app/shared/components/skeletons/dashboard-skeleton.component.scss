@@ -1,0 +1,112 @@
+@import '../../../../styles/skeleton';
+
+:host { display: block; }
+
+.dashboard-wrapper {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.dashboard-skeleton { padding-top: 82px; }
+
+.attendance-section {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.attendance-action-wrapper {
+  border-radius: 14px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.attendance-card-wrapper { min-width: 0; }
+
+.stats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.stats-section {
+  padding: 20px;
+}
+
+.stats-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.stat-info { flex: 1; }
+
+.skeleton-filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.sk-chart { height: 200px; }
+
+.recent-section { padding: 20px; }
+
+.section-header { margin-bottom: 12px; }
+
+.activity-table { overflow: hidden; }
+
+.table-header {
+  display: grid;
+  grid-template-columns: 90px 80px 1fr 90px 90px;
+  padding: 10px 20px;
+  background: var(--pwl-surface-variant);
+  border-bottom: 1px solid var(--pwl-divider);
+  border-radius: 8px 8px 0 0;
+}
+
+.th {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--pwl-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.skeleton-row {
+  padding: 10px 20px;
+  display: grid;
+  grid-template-columns: 90px 80px 1fr 90px 90px;
+  align-items: center;
+  border-bottom: 1px solid var(--pwl-divider);
+}
+
+.skeleton-row:last-child { border-bottom: none; }
+
+@media (max-width: 1024px) {
+  .charts-row { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .dashboard-wrapper { padding: 0 16px; }
+  .dashboard-skeleton { padding-top: 72px; }
+  .attendance-section { grid-template-columns: 1fr; }
+  .skeleton-filters { flex-wrap: wrap; }
+  .stats-cards { grid-template-columns: 1fr; }
+  .table-header { display: none; }
+  .skeleton-row { display: none; }
+}

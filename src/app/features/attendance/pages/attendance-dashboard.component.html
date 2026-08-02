@@ -1,4 +1,7 @@
     <div class="dashboard-wrapper">
+      @if (loading()) {
+      <app-attendance-dashboard-skeleton />
+      } @else {
       <div class="dashboard">
         <div class="top-bar">
           <a routerLink="/attendance/history" class="history-btn">
@@ -234,4 +237,5 @@
           </div>
         </div>
       </div>
+      }
     </div>
