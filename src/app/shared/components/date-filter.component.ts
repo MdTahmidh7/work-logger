@@ -1,4 +1,4 @@
-import { Component, output, signal, inject } from '@angular/core';
+import { Component, output, signal, inject, input, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -15,7 +15,11 @@ import { DateFilterType } from '../../core/models/work-log.model';
 export class DateFilterComponent {
   rangeChange = output<{ startDate: string; endDate: string }>();
 
+  initialStartDate = input<string>('');
+  initialEndDate = input<string>('');
+
   private dateUtils = inject(DateUtilsService);
+  private initialized = false;
 
   filters = [
     { value: 'today', label: 'Today', icon: 'today' },
@@ -31,8 +35,23 @@ export class DateFilterComponent {
   customEnd = signal(new Date().toISOString().split('T')[0]);
 
   constructor() {
-    const range = this.dateUtils.getDateRange('last30Days');
-    this.rangeChange.emit(range);
+    effect(() => {
+      const startDate = this.initialStartDate();
+      const endDate = this.initialEndDate();
+
+      if (startDate && endDate && !this.initialized) {
+        this.initialized = true;
+        this.customStart.set(startDate);
+        this.customEnd.set(endDate);
+        this.selected.set('custom');
+        this.showCustom.set(true);
+        this.rangeChange.emit({ startDate, endDate });
+      } else if (!this.initialized) {
+        this.initialized = true;
+        const range = this.dateUtils.getDateRange('last30Days');
+        this.rangeChange.emit(range);
+      }
+    });
   }
 
   select(value: string): void {
@@ -40,6 +59,17 @@ export class DateFilterComponent {
     this.showCustom.set(false);
     const range = this.dateUtils.getDateRange(value as DateFilterType);
     this.rangeChange.emit(range);
+  }
+
+  toggleCustom(): void {
+    this.showCustom.update(v => !v);
+    this.selected.set('custom');
+    if (this.showCustom()) {
+      this.rangeChange.emit({
+        startDate: this.customStart(),
+        endDate: this.customEnd()
+      });
+    }
   }
 
   onStartChange(event: Event): void {
@@ -54,6 +84,7 @@ export class DateFilterComponent {
 
   private emitCustom(): void {
     this.selected.set('custom');
+    this.showCustom.set(true);
     this.rangeChange.emit({
       startDate: this.customStart(),
       endDate: this.customEnd()
