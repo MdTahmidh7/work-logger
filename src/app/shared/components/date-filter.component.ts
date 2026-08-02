@@ -1,4 +1,4 @@
-import { Component, output, signal, inject, input, effect } from '@angular/core';
+import { Component, output, signal, inject, input, effect, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -12,14 +12,13 @@ import { DateFilterType } from '../../core/models/work-log.model';
   templateUrl: './date-filter.component.html',
   styleUrls: ['./date-filter.component.scss']
 })
-export class DateFilterComponent {
+export class DateFilterComponent implements OnInit {
   rangeChange = output<{ startDate: string; endDate: string }>();
 
   initialStartDate = input<string>('');
   initialEndDate = input<string>('');
 
   private dateUtils = inject(DateUtilsService);
-  private initialized = false;
 
   filters = [
     { value: 'today', label: 'Today', icon: 'today' },
@@ -34,24 +33,17 @@ export class DateFilterComponent {
   customStart = signal(new Date().toISOString().split('T')[0]);
   customEnd = signal(new Date().toISOString().split('T')[0]);
 
-  constructor() {
-    effect(() => {
-      const startDate = this.initialStartDate();
-      const endDate = this.initialEndDate();
+  ngOnInit(): void {
+    const startDate = this.initialStartDate();
+    const endDate = this.initialEndDate();
 
-      if (startDate && endDate && !this.initialized) {
-        this.initialized = true;
-        this.customStart.set(startDate);
-        this.customEnd.set(endDate);
-        this.selected.set('custom');
-        this.showCustom.set(true);
-        this.rangeChange.emit({ startDate, endDate });
-      } else if (!this.initialized) {
-        this.initialized = true;
-        const range = this.dateUtils.getDateRange('last30Days');
-        this.rangeChange.emit(range);
-      }
-    });
+    if (startDate && endDate) {
+      this.customStart.set(startDate);
+      this.customEnd.set(endDate);
+      this.selected.set('custom');
+      this.showCustom.set(true);
+      this.rangeChange.emit({ startDate, endDate });
+    }
   }
 
   select(value: string): void {
