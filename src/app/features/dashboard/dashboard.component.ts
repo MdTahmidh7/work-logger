@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { StatisticCardComponent } from '../../shared/components/statistic-card.component';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ChartCardComponent } from '../../shared/components/chart-card.component';
 import { DateFilterComponent } from '../../shared/components/date-filter.component';
 import { TodayAttendanceCardComponent } from '../attendance/components/today-attendance-card.component';
@@ -18,19 +18,20 @@ import { Attendance } from '../attendance/models/attendance.model';
 import { AttendanceService } from '../attendance/services/attendance.service';
 import { WorkLogService } from '../work-log/services/work-log.service';
 import { formatWorkingHoursColon } from '../../core/utils/format.utils';
-import { getDaysInMonth, parseISO } from 'date-fns';
+import { getDaysInMonth, parseISO, subDays, format, isAfter, isBefore } from 'date-fns';
 
 @Component({
   standalone: true,
   selector: 'app-dashboard',
   imports: [CommonModule, FormsModule, RouterModule, MatIconModule, MatButtonModule,
-            StatisticCardComponent, ChartCardComponent, DateFilterComponent,
+            MatTooltipModule, ChartCardComponent, DateFilterComponent,
             TodayAttendanceCardComponent, AttendanceActionButtonComponent,
             DashboardSkeletonComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })
 export class DashboardComponent implements OnInit {
+  private static readonly FULL_DAY_MINUTES = 420;
   private dateUtils = inject(DateUtilsService);
   private attendanceService = inject(AttendanceService);
   private workLogService = inject(WorkLogService);
@@ -39,58 +40,33 @@ export class DashboardComponent implements OnInit {
   private readonly PAGE_SIZE = 7;
 
   loading = signal(true);
+  submitting = signal(false);
   logs = signal<WorkLog[]>([]);
   currentPage = signal(0);
   todayAttendance = signal<Attendance | null>(null);
   attendanceRecords = signal<Attendance[]>([]);
 
-  statsData = computed(() => {
-    const all = this.logs();
-    const totalMinutes = all.reduce((s, l) => s + l.durationMinutes, 0);
-    const days = new Set(all.map(l => l.date));
-    const avg = days.size > 0 ? totalMinutes / 60 / days.size : 0;
-
-    const today = this.dateUtils.today();
-    const todayMinutes = all.filter(l => l.date === today).reduce((s, l) => s + l.durationMinutes, 0);
-
-    return [
-      {
-        icon: 'schedule', iconColor: '#6750a4', iconBg: 'rgba(103, 80, 164, 0.1)',
-        cardBg: 'linear-gradient(135deg, rgba(103, 80, 164, 0.05) 0%, rgba(103, 80, 164, 0.02) 100%)',
-        valueColor: '#6750a4', value: (totalMinutes / 60).toFixed(1) + 'h', label: 'Total Hours'
-      },
-      {
-        icon: 'today', iconColor: '#0d9488', iconBg: 'rgba(13, 148, 136, 0.1)',
-        cardBg: 'linear-gradient(135deg, rgba(13, 148, 136, 0.05) 0%, rgba(13, 148, 136, 0.02) 100%)',
-        valueColor: '#0d9488', value: (todayMinutes / 60).toFixed(1) + 'h', label: 'Today\'s Hours'
-      },
-      {
-        icon: 'trending_up', iconColor: '#d97706', iconBg: 'rgba(217, 119, 6, 0.1)',
-        cardBg: 'linear-gradient(135deg, rgba(217, 119, 6, 0.05) 0%, rgba(217, 119, 6, 0.02) 100%)',
-        valueColor: '#d97706', value: avg.toFixed(1) + 'h', label: 'Avg Hours/Day'
-      }
-    ];
-  });
-
   attendanceStats = computed(() => {
     const records = this.attendanceRecords();
-    const today = new Date();
-    const thirtyDaysAgo = new Date(today);
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const now = new Date();
+    const thirtyDaysAgo = subDays(now, 29);
+    const todayStr = format(now, 'yyyy-MM-dd');
+    const thirtyDaysAgoStr = format(thirtyDaysAgo, 'yyyy-MM-dd');
 
-    const totalDays = 30;
     let presentDays = 0;
     let nfohDays = 0;
 
     records.forEach((att) => {
-      if (att.workingMinutes >= 420) {
+      if (att.date < thirtyDaysAgoStr || att.date > todayStr) return;
+      if (att.workingMinutes >= DashboardComponent.FULL_DAY_MINUTES) {
         presentDays++;
       } else {
         nfohDays++;
       }
     });
 
-    const absentDays = totalDays - presentDays - nfohDays;
+    const totalDays = 30;
+    const absentDays = Math.max(0, totalDays - presentDays - nfohDays);
     return { presentDays, absentDays, nfohDays };
   });
 
@@ -172,10 +148,6 @@ export class DashboardComponent implements OnInit {
     this.loading.set(true);
     try {
       const range = this.dateUtils.getDateRange('last30Days');
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const startDate = thirtyDaysAgo.toISOString().split('T')[0];
-      const endDate = new Date().toISOString().split('T')[0];
 
       const [logs, attendance, records] = await Promise.all([
         this.workLogService.getByRange(range.startDate, range.endDate).catch(e => {
@@ -187,7 +159,7 @@ export class DashboardComponent implements OnInit {
           console.error('Failed to load attendance:', e);
           return undefined as Attendance | undefined;
         }),
-        this.attendanceService.getAttendanceByDateRange(startDate, endDate).catch(e => {
+        this.attendanceService.getAttendanceByDateRange(range.startDate, range.endDate).catch(e => {
           console.error('Failed to load attendance records:', e);
           return [] as Attendance[];
         })
@@ -215,6 +187,8 @@ export class DashboardComponent implements OnInit {
   }
 
   async handleAttendanceAction(): Promise<void> {
+    if (this.submitting()) return;
+    this.submitting.set(true);
     try {
       if (this.todayAttendance()) {
         await this.attendanceService.updatePunchOut();
@@ -226,6 +200,8 @@ export class DashboardComponent implements OnInit {
       this.todayAttendance.set(await this.attendanceService.getTodayAttendance() || null);
     } catch (error) {
       this.notify.error(error instanceof Error ? error.message : 'Failed to record attendance');
+    } finally {
+      this.submitting.set(false);
     }
   }
 

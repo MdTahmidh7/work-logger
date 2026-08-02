@@ -135,15 +135,23 @@ export class WorkLogRepository {
 
   async search(query: string): Promise<WorkLog[]> {
     const userId = await this.getUserId();
+    const sanitizedQuery = this.sanitizePostgrestFilter(query);
     const { data, error } = await this.supabase.supabase
       .from(this.TABLE)
       .select('*')
       .eq('user_id', userId)
-      .or(`title.ilike.%${query}%,details.ilike.%${query}%`)
+      .or(`title.ilike.%${sanitizedQuery}%,details.ilike.%${sanitizedQuery}%`)
       .order('work_date', { ascending: false });
 
     if (error) throw error;
     return (data || []).map(this.mapRow);
+  }
+
+  private sanitizePostgrestFilter(input: string): string {
+    return input
+      .replace(/%/g, '\\%')
+      .replace(/\(/g, '\\(')
+      .replace(/\)/g, '\\)');
   }
 
   async import(data: BackupData): Promise<number> {

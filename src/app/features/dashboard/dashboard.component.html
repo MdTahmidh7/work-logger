@@ -181,9 +181,11 @@
                     </div>
 
                     <div class="m-card-footer">
-                      <a [routerLink]="['/edit', group.logs[0].id]" class="m-edit-btn">
-                        <mat-icon>edit</mat-icon>
-                      </a>
+                      @if (group.logs[0].id) {
+                        <a [routerLink]="['/edit', group.logs[0].id]" class="m-edit-btn">
+                          <mat-icon>edit</mat-icon>
+                        </a>
+                      }
                     </div>
                   </div>
                 }

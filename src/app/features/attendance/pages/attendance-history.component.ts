@@ -47,9 +47,9 @@ export class AttendanceHistoryPageComponent implements OnInit {
         attendance,
         isToday: dateStr === today,
         getStatus: (): string => {
-          if (!attendance) return 'Absent';
-          if (attendance.workingMinutes >= 420) return 'Present';
-          return 'NFOH';
+          if (!attendance) return 'absent';
+          if (attendance.workingMinutes >= 420) return 'present';
+          return 'nfoh';
         }
       };
     });

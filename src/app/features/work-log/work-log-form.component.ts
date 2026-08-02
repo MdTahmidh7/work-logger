@@ -7,6 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { DateFilterComponent } from '../../shared/components/date-filter.component';
 import { WorkLogFormSkeletonComponent } from '../../shared/components/skeletons/work-log-form-skeleton.component';
 import { WorkLogService } from './services/work-log.service';
@@ -22,7 +23,7 @@ import { WorkLog } from '../../core/models/work-log.model';
   imports: [
     CommonModule, RouterModule, ReactiveFormsModule,
     MatIconModule, MatButtonModule, MatInputModule, MatFormFieldModule,
-    MatDatepickerModule, DateFilterComponent, WorkLogFormSkeletonComponent
+    MatDatepickerModule, MatTooltipModule, DateFilterComponent, WorkLogFormSkeletonComponent
   ],
   templateUrl: './work-log-form.component.html',
   styleUrls: ['./work-log-form.component.scss']
@@ -38,6 +39,7 @@ export class WorkLogFormComponent implements OnInit {
   responsive = inject(ResponsiveService);
 
   loading = signal(true);
+  submitting = signal(false);
   isEditMode = signal(false);
   logId = signal<number>(0);
   durationError = signal('');
@@ -205,7 +207,7 @@ export class WorkLogFormComponent implements OnInit {
   }
 
   async onSubmit(): Promise<void> {
-    if (this.form.invalid) return;
+    if (this.form.invalid || this.submitting()) return;
 
     const total = this.getTotalMinutes();
     if (total <= 0) {
@@ -224,6 +226,7 @@ export class WorkLogFormComponent implements OnInit {
       if (!confirmed) return;
     }
 
+    this.submitting.set(true);
     this.durationError.set('');
     const { title, details, date } = this.form.value;
     const dateStr = date instanceof Date
@@ -250,6 +253,8 @@ export class WorkLogFormComponent implements OnInit {
       await this.loadLogs();
     } catch {
       this.notify.error('Failed to save work log');
+    } finally {
+      this.submitting.set(false);
     }
   }
 

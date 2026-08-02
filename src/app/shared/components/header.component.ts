@@ -1,9 +1,10 @@
-import { Component, inject, signal, HostListener } from '@angular/core';
+import { Component, inject, signal, HostListener, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { AuthService } from '../../core/services/auth.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   standalone: true,
@@ -16,6 +17,7 @@ export class HeaderComponent {
   isDark = signal(false);
   mobileMenuOpen = signal(false);
   private authService = inject(AuthService);
+  private destroyRef = inject(DestroyRef);
 
   userEmail = signal('');
 
@@ -26,7 +28,7 @@ export class HeaderComponent {
       document.documentElement.setAttribute('data-theme', 'dark');
     }
 
-    this.authService.currentUser$.subscribe(user => {
+    this.authService.currentUser$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(user => {
       if (user?.email) {
         this.userEmail.set(user.email);
       }
