@@ -120,11 +120,16 @@ export class WorkLogFormComponent implements OnInit {
   }
 
   async loadLogs(range?: { startDate: string; endDate: string }): Promise<void> {
-    if (range) {
-      this.logs.set(await this.workLogService.getByRange(range.startDate, range.endDate));
-    } else {
-      const defaultRange = this.dateUtils.getDateRange('thisMonth');
-      this.logs.set(await this.workLogService.getByRange(defaultRange.startDate, defaultRange.endDate));
+    try {
+      if (range) {
+        this.logs.set(await this.workLogService.getByRange(range.startDate, range.endDate));
+      } else {
+        const defaultRange = this.dateUtils.getDateRange('thisMonth');
+        this.logs.set(await this.workLogService.getByRange(defaultRange.startDate, defaultRange.endDate));
+      }
+    } catch (e) {
+      console.error('Failed to load work logs:', e);
+      this.notify.error('Failed to load work logs: ' + (e instanceof Error ? e.message : 'Unknown error'));
     }
   }
 

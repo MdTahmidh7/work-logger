@@ -166,20 +166,38 @@ export class DashboardComponent implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
-    const range = this.dateUtils.getDateRange('thisMonth');
-    this.logs.set(await this.workLogService.getByRange(range.startDate, range.endDate));
-    this.todayAttendance.set(await this.attendanceService.getTodayAttendance() || null);
+    try {
+      const range = this.dateUtils.getDateRange('thisMonth');
+      this.logs.set(await this.workLogService.getByRange(range.startDate, range.endDate));
+    } catch (e) {
+      console.error('Failed to load work logs:', e);
+      this.notify.error('Failed to load work logs: ' + (e instanceof Error ? e.message : 'Unknown error'));
+    }
+    try {
+      this.todayAttendance.set(await this.attendanceService.getTodayAttendance() || null);
+    } catch (e) {
+      console.error('Failed to load attendance:', e);
+    }
 
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const startDate = thirtyDaysAgo.toISOString().split('T')[0];
-    const endDate = new Date().toISOString().split('T')[0];
-    this.attendanceRecords.set(await this.attendanceService.getAttendanceByDateRange(startDate, endDate));
+    try {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const startDate = thirtyDaysAgo.toISOString().split('T')[0];
+      const endDate = new Date().toISOString().split('T')[0];
+      this.attendanceRecords.set(await this.attendanceService.getAttendanceByDateRange(startDate, endDate));
+    } catch (e) {
+      console.error('Failed to load attendance records:', e);
+    }
   }
 
   async onFilterChange(range: { startDate: string; endDate: string }): Promise<void> {
     this.currentPage.set(0);
-    this.logs.set(await this.workLogService.getByRange(range.startDate, range.endDate));
+    try {
+      this.logs.set(await this.workLogService.getByRange(range.startDate, range.endDate));
+    } catch (e) {
+      console.error('Failed to load work logs:', e);
+      this.notify.error('Failed to load work logs: ' + (e instanceof Error ? e.message : 'Unknown error'));
+    }
   }
 
   async handleAttendanceAction(): Promise<void> {
