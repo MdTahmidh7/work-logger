@@ -12,5 +12,21 @@
 </head>
 <body>
   <pwl-root></pwl-root>
+  <script>
+    // Single Page Apps for GitHub Pages
+    // https://github.com/rafgraph/spa-github-pages
+    // This script is run when the browser loads index.html from the 404 redirect.
+    // It takes the new URL with the query string and converts it back to a normal path.
+    (function(l) {
+      if (l.search[1] === '/') {
+        var decoded = l.search.slice(1).split('&').map(function(s) {
+          return s.replace(/~and~/g, '&')
+        }).join('?');
+        window.history.replaceState(null, null,
+          l.pathname.slice(0, -1) + decoded + l.hash
+        );
+      }
+    }(window.location))
+  </script>
 </body>
 </html>
