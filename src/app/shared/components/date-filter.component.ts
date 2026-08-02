@@ -54,29 +54,25 @@ export class DateFilterComponent implements OnInit {
   }
 
   toggleCustom(): void {
-    this.showCustom.update(v => !v);
-    this.selected.set('custom');
-    if (this.showCustom()) {
-      this.rangeChange.emit({
-        startDate: this.customStart(),
-        endDate: this.customEnd()
-      });
+    const newState = !this.showCustom();
+    this.showCustom.set(newState);
+    if (newState) {
+      this.selected.set('custom');
+    } else {
+      this.selected.set('last30Days');
     }
   }
 
   onStartChange(event: Event): void {
     this.customStart.set((event.target as HTMLInputElement).value);
-    this.emitCustom();
   }
 
   onEndChange(event: Event): void {
     this.customEnd.set((event.target as HTMLInputElement).value);
-    this.emitCustom();
   }
 
-  private emitCustom(): void {
+  applyCustom(): void {
     this.selected.set('custom');
-    this.showCustom.set(true);
     this.rangeChange.emit({
       startDate: this.customStart(),
       endDate: this.customEnd()

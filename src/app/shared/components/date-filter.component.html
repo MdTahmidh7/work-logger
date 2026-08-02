@@ -16,6 +16,10 @@
       <input type="date" [value]="customStart()" (change)="onStartChange($event)" class="date-input">
       <span class="range-sep">to</span>
       <input type="date" [value]="customEnd()" (change)="onEndChange($event)" class="date-input">
+      <button class="apply-btn" (click)="applyCustom()">
+        <mat-icon>check</mat-icon>
+        Apply
+      </button>
     </div>
   }
 </div>

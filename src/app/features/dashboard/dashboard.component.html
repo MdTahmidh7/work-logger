@@ -89,9 +89,11 @@
             </div>
           </div>
         </div>
+      </div>
+      }
 
-        <app-date-filter (rangeChange)="onFilterChange($event)" />
-
+      @if (!loading()) {
+      <div class="dashboard">
         <div class="charts-row">
           <app-chart-card title="Hours by Hour (Today)" type="bar"
                           [labels]="hourlyLabels()" [datasets]="hourlyDataset()"
@@ -105,6 +107,11 @@
           <div class="section-header">
             <h2>Recent Activity</h2>
           </div>
+
+          <div class="filter-bar">
+            <app-date-filter (rangeChange)="onFilterChange($event)" />
+          </div>
+
           @if (groupedLogs().length === 0) {
             <div class="empty-state">
               <mat-icon>schedule</mat-icon>

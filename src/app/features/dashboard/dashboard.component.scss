@@ -9,7 +9,6 @@
   height: 200px;
 }
 
-.dashboard { padding-top: 82px; }
 
 .attendance-section {
   display: grid;
@@ -140,6 +139,11 @@
 }
 .section-header { padding: 14px 20px; border-bottom: 1px solid var(--pwl-divider); }
 .section-header h2 { font-size: 15px; font-weight: 600; margin: 0; }
+
+.filter-bar {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--pwl-divider);
+}
 
 .empty-state { text-align: center; padding: 40px 20px; }
 .empty-state mat-icon { font-size: 40px; width: 40px; height: 40px; color: var(--pwl-text-tertiary); margin-bottom: 10px; }
