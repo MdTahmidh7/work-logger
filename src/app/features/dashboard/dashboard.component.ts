@@ -140,7 +140,7 @@ export class DashboardComponent implements OnInit {
   });
 
   groupedLogs = computed(() => {
-    const logs = this.logs().slice(0, 50);
+    const logs = this.logs();
     const groups: { [key: string]: WorkLog[] } = {};
     for (const log of logs) {
       if (!groups[log.date]) groups[log.date] = [];
