@@ -1,9 +1,90 @@
     <div class="dashboard-wrapper">
       @if (loading()) {
-        <div class="loading-overlay">
-          <mat-spinner diameter="40"></mat-spinner>
-          <span class="loading-text">Loading dashboard...</span>
+      <div class="dashboard dashboard-skeleton">
+        <div class="attendance-section">
+          <div class="attendance-action-wrapper skeleton-card">
+            <div class="sk-circle"></div>
+            <div class="sk-block sk-w60"></div>
+            <div class="sk-block sk-w80"></div>
+          </div>
+          <div class="attendance-card-wrapper skeleton-card">
+            <div class="sk-block sk-w40 sk-mb8"></div>
+            <div class="sk-block sk-w70 sk-mb12"></div>
+            <div class="sk-row">
+              <div class="sk-block sk-w30 sk-h24"></div>
+              <div class="sk-block sk-w20 sk-h24"></div>
+            </div>
+          </div>
         </div>
+
+        <div class="stats-row">
+          <div class="stats-section skeleton-card">
+            <div class="sk-block sk-w50 sk-mb16"></div>
+            <div class="stats-cards">
+              @for (i of [1,2,3]; track i) {
+              <div class="stat-card skeleton-stat">
+                <div class="sk-icon"></div>
+                <div class="stat-info">
+                  <div class="sk-block sk-w60 sk-mb4 sk-h10"></div>
+                  <div class="sk-block sk-w40 sk-h20"></div>
+                </div>
+              </div>
+              }
+            </div>
+          </div>
+          <div class="stats-section skeleton-card">
+            <div class="sk-block sk-w50 sk-mb16"></div>
+            <div class="stats-cards">
+              @for (i of [1,2,3]; track i) {
+              <div class="stat-card skeleton-stat">
+                <div class="sk-icon"></div>
+                <div class="stat-info">
+                  <div class="sk-block sk-w60 sk-mb4 sk-h10"></div>
+                  <div class="sk-block sk-w40 sk-h20"></div>
+                </div>
+              </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <div class="skeleton-filters">
+          <div class="sk-block sk-w20 sk-h36 sk-radius"></div>
+          <div class="sk-block sk-w24 sk-h36 sk-radius"></div>
+          <div class="sk-block sk-w28 sk-h36 sk-radius"></div>
+          <div class="sk-block sk-w32 sk-h36 sk-radius"></div>
+          <div class="sk-block sk-w24 sk-h36 sk-radius"></div>
+        </div>
+
+        <div class="charts-row">
+          <div class="skeleton-card sk-chart"></div>
+          <div class="skeleton-card sk-chart"></div>
+        </div>
+
+        <div class="recent-section skeleton-card">
+          <div class="section-header">
+            <div class="sk-block sk-w32"></div>
+          </div>
+          <div class="activity-table">
+            <div class="table-header">
+              <div class="th"><div class="sk-block sk-w16 sk-h10"></div></div>
+              <div class="th"><div class="sk-block sk-w14 sk-h10"></div></div>
+              <div class="th"><div class="sk-block sk-w20 sk-h10"></div></div>
+              <div class="th"><div class="sk-block sk-w18 sk-h10"></div></div>
+              <div class="th"><div class="sk-block sk-w16 sk-h10"></div></div>
+            </div>
+            @for (i of [1,2,3,4]; track i) {
+            <div class="table-row skeleton-row">
+              <div class="td"><div class="sk-block sk-w20 sk-h12"></div></div>
+              <div class="td"><div class="sk-block sk-w16 sk-h12"></div></div>
+              <div class="td"><div class="sk-block sk-w70 sk-h12 sk-mb4"></div><div class="sk-block sk-w40 sk-h10"></div></div>
+              <div class="td"><div class="sk-block sk-w14 sk-h12"></div></div>
+              <div class="td"><div class="sk-badge-skeleton"></div></div>
+            </div>
+            }
+          </div>
+        </div>
+      </div>
       } @else {
       <div class="dashboard">
         <div class="attendance-section">

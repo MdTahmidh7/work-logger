@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { StatisticCardComponent } from '../../shared/components/statistic-card.component';
 import { ChartCardComponent } from '../../shared/components/chart-card.component';
 import { DateFilterComponent } from '../../shared/components/date-filter.component';
@@ -24,7 +23,7 @@ import { getDaysInMonth, parseISO } from 'date-fns';
   standalone: true,
   selector: 'app-dashboard',
   imports: [CommonModule, FormsModule, RouterModule, MatIconModule, MatButtonModule,
-            MatProgressSpinnerModule, StatisticCardComponent, ChartCardComponent, DateFilterComponent,
+            StatisticCardComponent, ChartCardComponent, DateFilterComponent,
             TodayAttendanceCardComponent, AttendanceActionButtonComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']

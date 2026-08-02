@@ -7,7 +7,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { DateFilterComponent } from '../../shared/components/date-filter.component';
 import { WorkLogService } from './services/work-log.service';
 import { NotificationService } from '../../core/services/notification.service';
@@ -22,7 +21,7 @@ import { WorkLog } from '../../core/models/work-log.model';
   imports: [
     CommonModule, RouterModule, ReactiveFormsModule,
     MatIconModule, MatButtonModule, MatInputModule, MatFormFieldModule,
-    MatDatepickerModule, MatProgressSpinnerModule, DateFilterComponent
+    MatDatepickerModule, DateFilterComponent
   ],
   templateUrl: './work-log-form.component.html',
   styleUrls: ['./work-log-form.component.scss']
