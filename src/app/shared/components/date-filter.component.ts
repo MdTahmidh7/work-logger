@@ -21,16 +21,17 @@ export class DateFilterComponent {
     { value: 'today', label: 'Today', icon: 'today' },
     { value: 'yesterday', label: 'Yesterday', icon: 'history' },
     { value: 'thisWeek', label: 'This Week', icon: 'date_range' },
+    { value: 'last30Days', label: 'Last 30 Days', icon: 'date_range' },
     { value: 'thisMonth', label: 'This Month', icon: 'calendar_today' }
   ];
 
-  selected = signal('thisMonth');
+  selected = signal('last30Days');
   showCustom = signal(false);
   customStart = signal(new Date().toISOString().split('T')[0]);
   customEnd = signal(new Date().toISOString().split('T')[0]);
 
   constructor() {
-    const range = this.dateUtils.getDateRange('thisMonth');
+    const range = this.dateUtils.getDateRange('last30Days');
     this.rangeChange.emit(range);
   }
 

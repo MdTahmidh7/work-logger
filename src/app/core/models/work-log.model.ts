@@ -8,7 +8,7 @@ export interface WorkLog {
   updatedAt: string;
 }
 
-export type DateFilterType = 'today' | 'yesterday' | 'thisWeek' | 'lastWeek' | 'thisMonth' | 'lastMonth' | 'thisYear' | 'custom';
+export type DateFilterType = 'today' | 'yesterday' | 'thisWeek' | 'lastWeek' | 'thisMonth' | 'lastMonth' | 'last30Days' | 'thisYear' | 'custom';
 
 export interface DateRange {
   startDate: string;

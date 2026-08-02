@@ -124,7 +124,7 @@ export class WorkLogFormComponent implements OnInit {
       if (range) {
         this.logs.set(await this.workLogService.getByRange(range.startDate, range.endDate));
       } else {
-        const defaultRange = this.dateUtils.getDateRange('thisMonth');
+        const defaultRange = this.dateUtils.getDateRange('last30Days');
         this.logs.set(await this.workLogService.getByRange(defaultRange.startDate, defaultRange.endDate));
       }
     } catch (e) {

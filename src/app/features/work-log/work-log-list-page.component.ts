@@ -50,7 +50,7 @@ export class WorkLogListPageComponent implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
-    const range = this.dateUtils.getDateRange('thisMonth');
+    const range = this.dateUtils.getDateRange('last30Days');
     this.filteredLogs.set(await this.workLogService.getByRange(range.startDate, range.endDate));
   }
 

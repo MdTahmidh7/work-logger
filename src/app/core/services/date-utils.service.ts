@@ -42,6 +42,11 @@ export class DateUtilsService {
         return { startDate: format(lastMonthStart, 'yyyy-MM-dd'), endDate: format(lastMonthEnd, 'yyyy-MM-dd') };
       }
 
+      case 'last30Days': {
+        const thirtyDaysAgo = subDays(now, 29);
+        return { startDate: format(thirtyDaysAgo, 'yyyy-MM-dd'), endDate: format(now, 'yyyy-MM-dd') };
+      }
+
       case 'thisYear': {
         const yearStart = startOfYear(now);
         return { startDate: format(yearStart, 'yyyy-MM-dd'), endDate: format(now, 'yyyy-MM-dd') };

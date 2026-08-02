@@ -167,7 +167,7 @@ export class DashboardComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     try {
-      const range = this.dateUtils.getDateRange('thisMonth');
+      const range = this.dateUtils.getDateRange('last30Days');
       this.logs.set(await this.workLogService.getByRange(range.startDate, range.endDate));
     } catch (e) {
       console.error('Failed to load work logs:', e);
