@@ -7,6 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { DateFilterComponent } from '../../shared/components/date-filter.component';
 import { WorkLogService } from './services/work-log.service';
 import { NotificationService } from '../../core/services/notification.service';
@@ -21,7 +22,7 @@ import { WorkLog } from '../../core/models/work-log.model';
   imports: [
     CommonModule, RouterModule, ReactiveFormsModule,
     MatIconModule, MatButtonModule, MatInputModule, MatFormFieldModule,
-    MatDatepickerModule, DateFilterComponent
+    MatDatepickerModule, MatProgressSpinnerModule, DateFilterComponent
   ],
   templateUrl: './work-log-form.component.html',
   styleUrls: ['./work-log-form.component.scss']
@@ -36,6 +37,7 @@ export class WorkLogFormComponent implements OnInit {
   private workLogService = inject(WorkLogService);
   responsive = inject(ResponsiveService);
 
+  loading = signal(true);
   isEditMode = signal(false);
   logId = signal<number>(0);
   durationError = signal('');
@@ -83,8 +85,8 @@ export class WorkLogFormComponent implements OnInit {
 
   totalLogsCount = computed(() => this.logs().length);
 
-  ngOnInit(): void {
-    this.loadLogs();
+  async ngOnInit(): Promise<void> {
+    await this.loadLogs();
 
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
@@ -120,6 +122,7 @@ export class WorkLogFormComponent implements OnInit {
   }
 
   async loadLogs(range?: { startDate: string; endDate: string }): Promise<void> {
+    this.loading.set(true);
     try {
       if (range) {
         this.logs.set(await this.workLogService.getByRange(range.startDate, range.endDate));
@@ -130,6 +133,8 @@ export class WorkLogFormComponent implements OnInit {
     } catch (e) {
       console.error('Failed to load work logs:', e);
       this.notify.error('Failed to load work logs: ' + (e instanceof Error ? e.message : 'Unknown error'));
+    } finally {
+      this.loading.set(false);
     }
   }
 

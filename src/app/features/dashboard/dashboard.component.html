@@ -1,4 +1,10 @@
     <div class="dashboard-wrapper">
+      @if (loading()) {
+        <div class="loading-overlay">
+          <mat-spinner diameter="40"></mat-spinner>
+          <span class="loading-text">Loading dashboard...</span>
+        </div>
+      } @else {
       <div class="dashboard">
         <div class="attendance-section">
           <div class="attendance-action-wrapper" [class.bg-punch-in]="!todayAttendance()" [class.bg-punch-out]="todayAttendance()">
@@ -200,6 +206,7 @@
           }
         </div>
       </div>
+      }
 
       <a routerLink="/work-log" class="fab-button" matTooltip="Add Work Log">
         <mat-icon>add</mat-icon>

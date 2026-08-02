@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { StatisticCardComponent } from '../../shared/components/statistic-card.component';
 import { ChartCardComponent } from '../../shared/components/chart-card.component';
 import { DateFilterComponent } from '../../shared/components/date-filter.component';
@@ -23,7 +24,7 @@ import { getDaysInMonth, parseISO } from 'date-fns';
   standalone: true,
   selector: 'app-dashboard',
   imports: [CommonModule, FormsModule, RouterModule, MatIconModule, MatButtonModule,
-            StatisticCardComponent, ChartCardComponent, DateFilterComponent,
+            MatProgressSpinnerModule, StatisticCardComponent, ChartCardComponent, DateFilterComponent,
             TodayAttendanceCardComponent, AttendanceActionButtonComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
@@ -36,6 +37,7 @@ export class DashboardComponent implements OnInit {
   responsive = inject(ResponsiveService);
   private readonly PAGE_SIZE = 7;
 
+  loading = signal(true);
   logs = signal<WorkLog[]>([]);
   currentPage = signal(0);
   todayAttendance = signal<Attendance | null>(null);
@@ -166,37 +168,48 @@ export class DashboardComponent implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
+    this.loading.set(true);
     try {
       const range = this.dateUtils.getDateRange('last30Days');
-      this.logs.set(await this.workLogService.getByRange(range.startDate, range.endDate));
-    } catch (e) {
-      console.error('Failed to load work logs:', e);
-      this.notify.error('Failed to load work logs: ' + (e instanceof Error ? e.message : 'Unknown error'));
-    }
-    try {
-      this.todayAttendance.set(await this.attendanceService.getTodayAttendance() || null);
-    } catch (e) {
-      console.error('Failed to load attendance:', e);
-    }
-
-    try {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const startDate = thirtyDaysAgo.toISOString().split('T')[0];
       const endDate = new Date().toISOString().split('T')[0];
-      this.attendanceRecords.set(await this.attendanceService.getAttendanceByDateRange(startDate, endDate));
-    } catch (e) {
-      console.error('Failed to load attendance records:', e);
+
+      const [logs, attendance, records] = await Promise.all([
+        this.workLogService.getByRange(range.startDate, range.endDate).catch(e => {
+          console.error('Failed to load work logs:', e);
+          this.notify.error('Failed to load work logs: ' + (e instanceof Error ? e.message : 'Unknown error'));
+          return [] as WorkLog[];
+        }),
+        this.attendanceService.getTodayAttendance().catch(e => {
+          console.error('Failed to load attendance:', e);
+          return undefined as Attendance | undefined;
+        }),
+        this.attendanceService.getAttendanceByDateRange(startDate, endDate).catch(e => {
+          console.error('Failed to load attendance records:', e);
+          return [] as Attendance[];
+        })
+      ]);
+
+      this.logs.set(logs);
+      this.todayAttendance.set(attendance || null);
+      this.attendanceRecords.set(records);
+    } finally {
+      this.loading.set(false);
     }
   }
 
   async onFilterChange(range: { startDate: string; endDate: string }): Promise<void> {
     this.currentPage.set(0);
+    this.loading.set(true);
     try {
       this.logs.set(await this.workLogService.getByRange(range.startDate, range.endDate));
     } catch (e) {
       console.error('Failed to load work logs:', e);
       this.notify.error('Failed to load work logs: ' + (e instanceof Error ? e.message : 'Unknown error'));
+    } finally {
+      this.loading.set(false);
     }
   }
 

@@ -1,4 +1,10 @@
     <div class="page-wrapper">
+      @if (loading()) {
+        <div class="loading-overlay">
+          <mat-spinner diameter="40"></mat-spinner>
+          <span class="loading-text">Loading work logs...</span>
+        </div>
+      } @else {
       <div class="page">
         <div class="form-card">
           <div class="card-header">
@@ -190,4 +196,5 @@
           }
         </div>
       </div>
+      }
     </div>
