@@ -92,6 +92,10 @@
       </div>
       }
 
+      <div class="filter-bar">
+        <app-date-filter (rangeChange)="onFilterChange($event)" />
+      </div>
+
       @if (!loading()) {
       <div class="dashboard">
         <div class="charts-row">
@@ -106,10 +110,6 @@
         <div class="recent-section">
           <div class="section-header">
             <h2>Recent Activity</h2>
-          </div>
-
-          <div class="filter-bar">
-            <app-date-filter (rangeChange)="onFilterChange($event)" />
           </div>
 
           @if (groupedLogs().length === 0) {

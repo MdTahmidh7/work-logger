@@ -55,6 +55,16 @@ export class DashboardComponent implements OnInit {
 
     let presentDays = 0;
     let nfohDays = 0;
+    let workingDays = 0;
+
+    const current = new Date(thirtyDaysAgo);
+    while (current <= now) {
+      const day = current.getDay();
+      if (day !== 5 && day !== 6) {
+        workingDays++;
+      }
+      current.setDate(current.getDate() + 1);
+    }
 
     records.forEach((att) => {
       if (att.date < thirtyDaysAgoStr || att.date > todayStr) return;
@@ -65,8 +75,7 @@ export class DashboardComponent implements OnInit {
       }
     });
 
-    const totalDays = 30;
-    const absentDays = Math.max(0, totalDays - presentDays - nfohDays);
+    const absentDays = Math.max(0, workingDays - presentDays - nfohDays);
     return { presentDays, absentDays, nfohDays };
   });
 
