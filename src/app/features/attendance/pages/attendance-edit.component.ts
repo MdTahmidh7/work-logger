@@ -5,7 +5,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { AttendanceService } from '../services/attendance.service';
-import { Attendance } from '../models/attendance.model';
+import { Attendance, DayType } from '../models/attendance.model';
 import { NotificationService } from '../../../core/services/notification.service';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 
@@ -28,8 +28,10 @@ export class AttendanceEditPageComponent implements OnInit {
   saving = signal(false);
 
   form: FormGroup = this.fb.group({
-    firstPunchIn: ['09:00', Validators.required],
-    lastPunchOut: ['']
+    firstPunchIn: ['09:00'],
+    lastPunchOut: [''],
+    dayType: ['working' as DayType],
+    dayTypeNote: ['']
   });
 
   calculatedWorkingHours = signal('--:--');
@@ -53,12 +55,16 @@ export class AttendanceEditPageComponent implements OnInit {
         this.attendance.set(record);
         this.form.patchValue({
           firstPunchIn: record.firstPunchIn,
-          lastPunchOut: record.lastPunchOut || ''
+          lastPunchOut: record.lastPunchOut || '',
+          dayType: record.dayType || 'working',
+          dayTypeNote: record.dayTypeNote || ''
         });
       } else {
         this.form.patchValue({
           firstPunchIn: '09:00',
-          lastPunchOut: ''
+          lastPunchOut: '',
+          dayType: 'working',
+          dayTypeNote: ''
         });
       }
       this.updateCalculations();
@@ -75,7 +81,22 @@ export class AttendanceEditPageComponent implements OnInit {
     return d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   }
 
+  isWorkingDay(): boolean {
+    return this.form.get('dayType')?.value === 'working';
+  }
+
   updateCalculations(): void {
+    if (!this.isWorkingDay()) {
+      this.calculatedWorkingHours.set('--:--');
+      const dayType = this.form.get('dayType')?.value;
+      if (dayType === 'holiday') {
+        this.status.set('Holiday');
+      } else if (dayType === 'leave') {
+        this.status.set('Leave');
+      }
+      return;
+    }
+
     const inTime = this.form.get('firstPunchIn')?.value;
     const outTime = this.form.get('lastPunchOut')?.value;
 
@@ -110,6 +131,8 @@ export class AttendanceEditPageComponent implements OnInit {
     switch (this.status()) {
       case 'Present': return 'check_circle';
       case 'NFOH': return 'warning';
+      case 'Holiday': return 'celebration';
+      case 'Leave': return 'event_busy';
       default: return 'cancel';
     }
   }
@@ -132,33 +155,41 @@ export class AttendanceEditPageComponent implements OnInit {
 
     this.saving.set(true);
     try {
-      const { firstPunchIn, lastPunchOut } = this.form.value;
-      const [inH, inM] = firstPunchIn.split(':').map(Number);
-
+      const { firstPunchIn, lastPunchOut, dayType, dayTypeNote } = this.form.value;
       let workingMinutes = 0;
       let status: 'working' | 'completed' = 'working';
 
-      if (lastPunchOut) {
-        const [outH, outM] = lastPunchOut.split(':').map(Number);
-        workingMinutes = (outH * 60 + outM) - (inH * 60 + inM);
-        if (workingMinutes < 0) workingMinutes = 0;
+      if (dayType === 'working') {
+        const [inH, inM] = firstPunchIn.split(':').map(Number);
+        if (lastPunchOut) {
+          const [outH, outM] = lastPunchOut.split(':').map(Number);
+          workingMinutes = (outH * 60 + outM) - (inH * 60 + inM);
+          if (workingMinutes < 0) workingMinutes = 0;
+          status = 'completed';
+        }
+      } else {
+        workingMinutes = 0;
         status = 'completed';
       }
 
       if (this.attendance()) {
         await this.attendanceService.updateAttendance(this.attendance()!.id!, {
-          firstPunchIn,
-          lastPunchOut: lastPunchOut || null,
+          firstPunchIn: dayType === 'working' ? firstPunchIn : '',
+          lastPunchOut: dayType === 'working' ? (lastPunchOut || null) : null,
           workingMinutes,
-          status
+          status,
+          dayType,
+          dayTypeNote: dayTypeNote || null
         });
       } else {
         await this.attendanceService.createAttendance({
           date: this.dateStr,
-          firstPunchIn,
-          lastPunchOut: lastPunchOut || null,
+          firstPunchIn: dayType === 'working' ? firstPunchIn : '',
+          lastPunchOut: dayType === 'working' ? (lastPunchOut || null) : null,
           workingMinutes,
-          status
+          status,
+          dayType,
+          dayTypeNote: dayTypeNote || null
         });
       }
 

@@ -55,6 +55,8 @@ export class DashboardComponent implements OnInit {
 
     let presentDays = 0;
     let nfohDays = 0;
+    let holidayDays = 0;
+    let leaveDays = 0;
     let workingDays = 0;
 
     const current = new Date(thirtyDaysAgo);
@@ -68,15 +70,19 @@ export class DashboardComponent implements OnInit {
 
     records.forEach((att) => {
       if (att.date < thirtyDaysAgoStr || att.date > todayStr) return;
-      if (att.workingMinutes >= DashboardComponent.FULL_DAY_MINUTES) {
+      if (att.dayType === 'holiday') {
+        holidayDays++;
+      } else if (att.dayType === 'leave') {
+        leaveDays++;
+      } else if (att.workingMinutes >= DashboardComponent.FULL_DAY_MINUTES) {
         presentDays++;
       } else {
         nfohDays++;
       }
     });
 
-    const absentDays = Math.max(0, workingDays - presentDays - nfohDays);
-    return { presentDays, absentDays, nfohDays };
+    const absentDays = Math.max(0, workingDays - presentDays - nfohDays - holidayDays - leaveDays);
+    return { presentDays, absentDays, nfohDays, holidayDays, leaveDays };
   });
 
   workLogStats = computed(() => {

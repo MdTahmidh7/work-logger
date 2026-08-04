@@ -12,26 +12,63 @@
 
         <div class="form-card">
           <form [formGroup]="form" (ngSubmit)="onSubmit()">
-            <div class="time-group">
-              <label class="field-label">Punch In</label>
-              <div class="time-input-wrapper">
-                <mat-icon class="field-icon punch-in-icon">login</mat-icon>
-                <input type="time" formControlName="firstPunchIn" class="native-time-input">
+            <div class="day-type-group">
+              <label class="field-label">Day Type</label>
+              <div class="day-type-options">
+                <label class="day-type-option" [class.selected]="form.get('dayType')?.value === 'working'">
+                  <input type="radio" formControlName="dayType" value="working">
+                  <mat-icon>work</mat-icon>
+                  <span>Working</span>
+                </label>
+                <label class="day-type-option holiday" [class.selected]="form.get('dayType')?.value === 'holiday'">
+                  <input type="radio" formControlName="dayType" value="holiday">
+                  <mat-icon>celebration</mat-icon>
+                  <span>Holiday</span>
+                </label>
+                <label class="day-type-option leave" [class.selected]="form.get('dayType')?.value === 'leave'">
+                  <input type="radio" formControlName="dayType" value="leave">
+                  <mat-icon>event_busy</mat-icon>
+                  <span>Leave</span>
+                </label>
               </div>
             </div>
 
-            <div class="time-group">
-              <label class="field-label">Punch Out</label>
-              <div class="time-input-wrapper">
-                <mat-icon class="field-icon punch-out-icon">logout</mat-icon>
-                <input type="time" formControlName="lastPunchOut" class="native-time-input">
+            @if (!isWorkingDay()) {
+              <div class="note-group">
+                <label class="field-label">
+                  @if (form.get('dayType')?.value === 'holiday') {
+                    Which holiday?
+                  } @else {
+                    Reason for leave
+                  }
+                </label>
+                <input type="text" formControlName="dayTypeNote" class="note-input"
+                       [placeholder]="form.get('dayType')?.value === 'holiday' ? 'e.g., Independence Day' : 'e.g., Personal work'">
               </div>
-            </div>
+            }
 
-            <div class="working-hour-preview">
-              <mat-icon>schedule</mat-icon>
-              <span>Working Hour: <strong>{{ calculatedWorkingHours() }}</strong></span>
-            </div>
+            @if (isWorkingDay()) {
+              <div class="time-group">
+                <label class="field-label">Punch In</label>
+                <div class="time-input-wrapper">
+                  <mat-icon class="field-icon punch-in-icon">login</mat-icon>
+                  <input type="time" formControlName="firstPunchIn" class="native-time-input">
+                </div>
+              </div>
+
+              <div class="time-group">
+                <label class="field-label">Punch Out</label>
+                <div class="time-input-wrapper">
+                  <mat-icon class="field-icon punch-out-icon">logout</mat-icon>
+                  <input type="time" formControlName="lastPunchOut" class="native-time-input">
+                </div>
+              </div>
+
+              <div class="working-hour-preview">
+                <mat-icon>schedule</mat-icon>
+                <span>Working Hour: <strong>{{ calculatedWorkingHours() }}</strong></span>
+              </div>
+            }
 
             <div class="status-preview" [class]="getStatusClass()">
               <mat-icon>{{ getStatusIcon() }}</mat-icon>

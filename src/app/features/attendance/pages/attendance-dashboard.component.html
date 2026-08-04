@@ -80,6 +80,8 @@
                   [class.status-nfoh]="
                     row.attendance && row.getStatus() === 'NFOH'
                   "
+                  [class.status-holiday]="row.getStatus() === 'Holiday'"
+                  [class.status-leave]="row.getStatus() === 'Leave'"
                   [class.status-absent]="!row.attendance"
                   [class.friday]="row.isFriday"
                   [class.saturday]="row.isSaturday"
@@ -94,6 +96,8 @@
                       [class.dot-nfoh]="
                         row.attendance && row.getStatus() === 'NFOH'
                       "
+                      [class.dot-holiday]="row.getStatus() === 'Holiday'"
+                      [class.dot-leave]="row.getStatus() === 'Leave'"
                       [class.dot-absent]="!row.attendance"
                     ></div>
                     <span class="date-text">{{ formatDate(row.date) }}</span>
@@ -140,6 +144,8 @@
                       class="status-badge"
                       [class.badge-present]="row.getStatus() === 'Present'"
                       [class.badge-nfoh]="row.getStatus() === 'NFOH'"
+                      [class.badge-holiday]="row.getStatus() === 'Holiday'"
+                      [class.badge-leave]="row.getStatus() === 'Leave'"
                       [class.badge-absent]="row.getStatus() === 'Absent'"
                     >
                       {{ row.getStatus() }}
@@ -159,6 +165,8 @@
                   class="att-card"
                   [class.status-present]="row.attendance && row.getStatus() === 'Present'"
                   [class.status-nfoh]="row.attendance && row.getStatus() === 'NFOH'"
+                  [class.status-holiday]="row.getStatus() === 'Holiday'"
+                  [class.status-leave]="row.getStatus() === 'Leave'"
                   [class.status-absent]="!row.attendance"
                   [class.friday]="row.isFriday"
                   [class.saturday]="row.isSaturday"
@@ -170,6 +178,8 @@
                         class="status-dot"
                         [class.dot-present]="row.attendance && row.getStatus() === 'Present'"
                         [class.dot-nfoh]="row.attendance && row.getStatus() === 'NFOH'"
+                        [class.dot-holiday]="row.getStatus() === 'Holiday'"
+                        [class.dot-leave]="row.getStatus() === 'Leave'"
                         [class.dot-absent]="!row.attendance"
                       ></div>
                       <span class="date-text">{{ formatDate(row.date) }}</span>
@@ -179,6 +189,8 @@
                       class="status-badge"
                       [class.badge-present]="row.getStatus() === 'Present'"
                       [class.badge-nfoh]="row.getStatus() === 'NFOH'"
+                      [class.badge-holiday]="row.getStatus() === 'Holiday'"
+                      [class.badge-leave]="row.getStatus() === 'Leave'"
                       [class.badge-absent]="row.getStatus() === 'Absent'"
                     >
                       {{ row.getStatus() }}

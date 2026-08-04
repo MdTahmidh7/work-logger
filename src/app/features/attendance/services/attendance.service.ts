@@ -44,6 +44,8 @@ export class AttendanceService {
       lastPunchOut: null,
       workingMinutes: 0,
       status: 'working',
+      dayType: 'working',
+      dayTypeNote: null,
       createdAt: now,
       updatedAt: now
     };
@@ -99,9 +101,12 @@ export class AttendanceService {
 
     const records = await this.getAttendanceByDateRange(start, end);
 
-    const presentDays = records.length;
+    const presentDays = records.filter(r => r.dayType === 'working' && r.workingMinutes >= 420).length;
+    const nfohDays = records.filter(r => r.dayType === 'working' && r.workingMinutes > 0 && r.workingMinutes < 420).length;
+    const holidayDays = records.filter(r => r.dayType === 'holiday').length;
+    const leaveDays = records.filter(r => r.dayType === 'leave').length;
     const daysInRange = this.getDaysBetween(start, end);
-    const absentDays = Math.max(0, daysInRange - presentDays);
+    const absentDays = Math.max(0, daysInRange - presentDays - nfohDays - holidayDays - leaveDays);
 
     const totalWorkingMinutes = records.reduce((sum, r) => sum + r.workingMinutes, 0);
     const totalWorkingHours = totalWorkingMinutes / 60;
@@ -122,6 +127,8 @@ export class AttendanceService {
     return {
       presentDays,
       absentDays,
+      holidayDays,
+      leaveDays,
       totalWorkingHours,
       averageWorkingHours,
       longestWorkingDay: longestRecord ? { date: longestRecord.date, hours: longestRecord.workingMinutes / 60 } : { date: '', hours: 0 },
@@ -172,10 +179,12 @@ export class AttendanceService {
     const now = new Date().toISOString();
     const attendance: Attendance = {
       date: data.date!,
-      firstPunchIn: data.firstPunchIn!,
+      firstPunchIn: data.firstPunchIn || '',
       lastPunchOut: data.lastPunchOut || null,
       workingMinutes: data.workingMinutes || 0,
       status: data.status || 'working',
+      dayType: data.dayType || 'working',
+      dayTypeNote: data.dayTypeNote || null,
       createdAt: now,
       updatedAt: now
     };

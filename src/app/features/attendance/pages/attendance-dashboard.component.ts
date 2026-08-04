@@ -75,6 +75,8 @@ export class AttendanceDashboardPageComponent implements OnInit {
         isSaturday: day.getDay() === 6,
         getStatus: (): string => {
           if (!attendance) return 'Absent';
+          if (attendance.dayType === 'holiday') return 'Holiday';
+          if (attendance.dayType === 'leave') return 'Leave';
           if (attendance.workingMinutes >= 420) return 'Present';
           return 'NFOH';
         },

@@ -217,6 +217,22 @@
   background: rgba(217, 119, 6, 0.08);
 }
 
+.table-row.status-holiday {
+  background: rgba(59, 130, 246, 0.04);
+}
+
+.table-row.status-holiday:hover {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.table-row.status-leave {
+  background: rgba(249, 115, 22, 0.04);
+}
+
+.table-row.status-leave:hover {
+  background: rgba(249, 115, 22, 0.08);
+}
+
 .table-row.status-absent {
   background: rgba(156, 163, 175, 0.03);
 }
@@ -273,6 +289,16 @@
 .dot-nfoh {
   background: #d97706;
   box-shadow: 0 0 6px rgba(217, 119, 6, 0.4);
+}
+
+.dot-holiday {
+  background: #3b82f6;
+  box-shadow: 0 0 6px rgba(59, 130, 246, 0.4);
+}
+
+.dot-leave {
+  background: #f97316;
+  box-shadow: 0 0 6px rgba(249, 115, 22, 0.4);
 }
 
 .dot-absent {
@@ -367,6 +393,16 @@
 .badge-nfoh {
   background: rgba(217, 119, 6, 0.15);
   color: #d97706;
+}
+
+.badge-holiday {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.badge-leave {
+  background: rgba(249, 115, 22, 0.15);
+  color: #f97316;
 }
 
 .edit-link {
@@ -464,6 +500,16 @@
   .att-card.status-nfoh {
     border-left: 3px solid #d97706;
     background: rgba(217, 119, 6, 0.04);
+  }
+
+  .att-card.status-holiday {
+    border-left: 3px solid #3b82f6;
+    background: rgba(59, 130, 246, 0.04);
+  }
+
+  .att-card.status-leave {
+    border-left: 3px solid #f97316;
+    background: rgba(249, 115, 22, 0.04);
   }
 
   .att-card.status-absent {

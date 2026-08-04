@@ -55,6 +55,106 @@
   padding: 28px;
 }
 
+.day-type-group {
+  margin-bottom: 24px;
+}
+
+.day-type-options {
+  display: flex;
+  gap: 12px;
+}
+
+.day-type-option {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 12px;
+  border-radius: 12px;
+  border: 2px solid var(--pwl-divider);
+  background: var(--pwl-surface);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.day-type-option input {
+  display: none;
+}
+
+.day-type-option mat-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+  color: var(--pwl-text-secondary);
+}
+
+.day-type-option span {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pwl-text-secondary);
+}
+
+.day-type-option.selected {
+  border-color: var(--pwl-primary);
+  background: var(--pwl-primary-light);
+}
+
+.day-type-option.selected mat-icon,
+.day-type-option.selected span {
+  color: var(--pwl-primary);
+}
+
+.day-type-option.holiday.selected {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.day-type-option.holiday.selected mat-icon,
+.day-type-option.holiday.selected span {
+  color: #3b82f6;
+}
+
+.day-type-option.leave.selected {
+  border-color: #f97316;
+  background: rgba(249, 115, 22, 0.1);
+}
+
+.day-type-option.leave.selected mat-icon,
+.day-type-option.leave.selected span {
+  color: #f97316;
+}
+
+.day-type-option:hover:not(.selected) {
+  border-color: var(--pwl-text-secondary);
+}
+
+.note-group {
+  margin-bottom: 24px;
+}
+
+.note-input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--pwl-divider);
+  background: var(--pwl-surface-variant);
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  color: var(--pwl-text-primary);
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.note-input:focus {
+  border-color: var(--pwl-primary);
+}
+
+.note-input::placeholder {
+  color: var(--pwl-text-tertiary);
+}
+
 .time-group {
   margin-bottom: 24px;
 }
@@ -162,6 +262,16 @@
 .status-preview.Absent {
   background: rgba(156, 163, 175, 0.1);
   color: #6b7280;
+}
+
+.status-preview.Holiday {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.status-preview.Leave {
+  background: rgba(249, 115, 22, 0.1);
+  color: #f97316;
 }
 
 .status-preview mat-icon {

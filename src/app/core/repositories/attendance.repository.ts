@@ -21,6 +21,8 @@ export class AttendanceRepository {
       lastPunchOut: row.last_punch_out,
       workingMinutes: row.working_minutes,
       status: row.status,
+      dayType: row.day_type || 'working',
+      dayTypeNote: row.day_type_note || null,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     };
@@ -34,6 +36,8 @@ export class AttendanceRepository {
       last_punch_out: att.lastPunchOut,
       working_minutes: att.workingMinutes,
       status: att.status,
+      day_type: att.dayType || 'working',
+      day_type_note: att.dayTypeNote || null,
       created_at: att.createdAt || new Date().toISOString(),
       updated_at: att.updatedAt || new Date().toISOString(),
     };
@@ -110,6 +114,8 @@ export class AttendanceRepository {
     if (data.lastPunchOut !== undefined) payload.last_punch_out = data.lastPunchOut;
     if (data.workingMinutes !== undefined) payload.working_minutes = data.workingMinutes;
     if (data.status !== undefined) payload.status = data.status;
+    if (data.dayType !== undefined) payload.day_type = data.dayType;
+    if (data.dayTypeNote !== undefined) payload.day_type_note = data.dayTypeNote;
 
     const { error } = await this.supabase.supabase
       .from(this.TABLE)
@@ -140,6 +146,8 @@ export class AttendanceRepository {
       last_punch_out: att.lastPunchOut,
       working_minutes: att.workingMinutes,
       status: att.status,
+      day_type: att.dayType || 'working',
+      day_type_note: att.dayTypeNote || null,
       created_at: att.createdAt || new Date().toISOString(),
       updated_at: att.updatedAt || new Date().toISOString(),
     }));
