@@ -17,16 +17,22 @@ export class TodayAttendanceCardComponent {
   statusClass = computed(() => {
     const att = this.attendance();
     if (!att) return 'Absent';
+    if (att.dayType === 'holiday') return 'Holiday';
+    if (att.dayType === 'leave') return 'Leave';
     if (att.workingMinutes >= 420) return 'Present';
-    return 'NFOH';
+    if (att.workingMinutes > 0) return 'NFOH';
+    return 'Absent';
   });
 
   statusLabel = computed(() => {
     const att = this.attendance();
     if (!att) return 'Not Started';
+    if (att.dayType === 'holiday') return 'Holiday';
+    if (att.dayType === 'leave') return 'Leave';
     if (att.status === 'working') return 'Working';
     if (att.workingMinutes >= 420) return 'Present';
-    return 'NFOH';
+    if (att.workingMinutes > 0) return 'NFOH';
+    return 'Absent';
   });
 
   workingHours = computed(() => {

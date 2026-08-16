@@ -62,10 +62,12 @@ export class AttendanceRepository {
       .select('*')
       .eq('user_id', userId)
       .eq('attendance_date', date)
-      .single();
+      .order('updated_at', { ascending: false })
+      .limit(1);
 
-    if (error || !data) return undefined;
-    return this.mapRow(data);
+    if (error) throw error;
+    if (!data || data.length === 0) return undefined;
+    return this.mapRow(data[0]);
   }
 
   async getByRange(startDate: string, endDate: string): Promise<Attendance[]> {

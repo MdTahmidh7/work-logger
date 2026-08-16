@@ -68,7 +68,15 @@ export class DashboardComponent implements OnInit {
       current.setDate(current.getDate() + 1);
     }
 
-    records.forEach((att) => {
+    const byDate = new Map<string, typeof records[number]>();
+    for (const att of records) {
+      const existing = byDate.get(att.date);
+      if (!existing || att.updatedAt > existing.updatedAt) {
+        byDate.set(att.date, att);
+      }
+    }
+
+    byDate.forEach((att) => {
       if (att.date < thirtyDaysAgoStr || att.date > todayStr) return;
       if (att.dayType === 'holiday') {
         holidayDays++;
@@ -76,7 +84,7 @@ export class DashboardComponent implements OnInit {
         leaveDays++;
       } else if (att.workingMinutes >= DashboardComponent.FULL_DAY_MINUTES) {
         presentDays++;
-      } else {
+      } else if (att.workingMinutes > 0) {
         nfohDays++;
       }
     });

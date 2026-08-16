@@ -83,6 +83,7 @@ export class AttendanceService {
   }
 
   formatTime(time: string): string {
+    if (!time || time === '--') return '--';
     const [h, m] = time.split(':').map(Number);
     const period = h >= 12 ? 'PM' : 'AM';
     const hour12 = h % 12 || 12;
@@ -99,14 +100,36 @@ export class AttendanceService {
     const start = startDate || format(startOfMonth(new Date()), 'yyyy-MM-dd');
     const end = endDate || format(new Date(), 'yyyy-MM-dd');
 
-    const records = await this.getAttendanceByDateRange(start, end);
+    const rawRecords = await this.getAttendanceByDateRange(start, end);
+
+    const byDate = new Map<string, Attendance>();
+    for (const record of rawRecords) {
+      const existing = byDate.get(record.date);
+      if (!existing || record.updatedAt > existing.updatedAt) {
+        byDate.set(record.date, record);
+      }
+    }
+    const records = Array.from(byDate.values());
+
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    let workingDays = 0;
+    const dayCursor = parseISO(start);
+    const endCursor = parseISO(end);
+    const today = parseISO(todayStr);
+    while (dayCursor <= endCursor) {
+      if (dayCursor > today) break;
+      const day = dayCursor.getDay();
+      if (day !== 5 && day !== 6) {
+        workingDays++;
+      }
+      dayCursor.setDate(dayCursor.getDate() + 1);
+    }
 
     const presentDays = records.filter(r => r.dayType === 'working' && r.workingMinutes >= 420).length;
     const nfohDays = records.filter(r => r.dayType === 'working' && r.workingMinutes > 0 && r.workingMinutes < 420).length;
     const holidayDays = records.filter(r => r.dayType === 'holiday').length;
     const leaveDays = records.filter(r => r.dayType === 'leave').length;
-    const daysInRange = this.getDaysBetween(start, end);
-    const absentDays = Math.max(0, daysInRange - presentDays - nfohDays - holidayDays - leaveDays);
+    const absentDays = Math.max(0, workingDays - presentDays - nfohDays - holidayDays - leaveDays);
 
     const totalWorkingMinutes = records.reduce((sum, r) => sum + r.workingMinutes, 0);
     const totalWorkingHours = totalWorkingMinutes / 60;
@@ -122,7 +145,7 @@ export class AttendanceService {
     const latestOut = records.reduce((latest, r) =>
       r.lastPunchOut && (!latest?.lastPunchOut || r.lastPunchOut > latest.lastPunchOut) ? r : latest, records[0]);
 
-    const attendancePercentage = daysInRange > 0 ? (presentDays / daysInRange) * 100 : 0;
+    const attendancePercentage = workingDays > 0 ? (presentDays / workingDays) * 100 : 0;
 
     return {
       presentDays,
@@ -188,18 +211,26 @@ export class AttendanceService {
       createdAt: now,
       updatedAt: now
     };
+
+    const existing = await this.getAttendanceByDate(data.date!);
+    if (existing) {
+      await this.attendanceRepo.update(existing.id!, {
+        firstPunchIn: attendance.firstPunchIn,
+        lastPunchOut: attendance.lastPunchOut,
+        workingMinutes: attendance.workingMinutes,
+        status: attendance.status,
+        dayType: attendance.dayType,
+        dayTypeNote: attendance.dayTypeNote,
+        updatedAt: now
+      });
+      return { ...attendance, id: existing.id };
+    }
+
     const id = await this.attendanceRepo.create(attendance);
     return { ...attendance, id };
   }
 
   private getTodayString(): string {
     return format(new Date(), 'yyyy-MM-dd');
-  }
-
-  private getDaysBetween(start: string, end: string): number {
-    const startDate = parseISO(start);
-    const endDate = parseISO(end);
-    const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
   }
 }

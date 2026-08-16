@@ -78,7 +78,8 @@ export class AttendanceDashboardPageComponent implements OnInit {
           if (attendance.dayType === 'holiday') return 'Holiday';
           if (attendance.dayType === 'leave') return 'Leave';
           if (attendance.workingMinutes >= 420) return 'Present';
-          return 'NFOH';
+          if (attendance.workingMinutes > 0) return 'NFOH';
+          return 'Absent';
         },
       };
     });
@@ -102,7 +103,10 @@ export class AttendanceDashboardPageComponent implements OnInit {
 
       const map = new Map<string, Attendance>();
       for (const record of records) {
-        map.set(record.date, record);
+        const existing = map.get(record.date);
+        if (!existing || record.updatedAt > existing.updatedAt) {
+          map.set(record.date, record);
+        }
       }
       this.attendanceMap.set(map);
 
@@ -188,6 +192,7 @@ export class AttendanceDashboardPageComponent implements OnInit {
   }
 
   formatTime(time: string): string {
+    if (!time || time === '--') return '--';
     const [h, m] = time.split(':').map(Number);
     const period = h >= 12 ? 'PM' : 'AM';
     const hour12 = h % 12 || 12;

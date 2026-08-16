@@ -47,9 +47,12 @@ export class AttendanceHistoryPageComponent implements OnInit {
         attendance,
         isToday: dateStr === today,
         getStatus: (): string => {
-          if (!attendance) return 'absent';
-          if (attendance.workingMinutes >= 420) return 'present';
-          return 'nfoh';
+          if (!attendance) return 'Absent';
+          if (attendance.dayType === 'holiday') return 'Holiday';
+          if (attendance.dayType === 'leave') return 'Leave';
+          if (attendance.workingMinutes >= 420) return 'Present';
+          if (attendance.workingMinutes > 0) return 'NFOH';
+          return 'Absent';
         }
       };
     });
@@ -87,7 +90,10 @@ export class AttendanceHistoryPageComponent implements OnInit {
 
       const map = new Map<string, Attendance>();
       for (const record of records) {
-        map.set(record.date, record);
+        const existing = map.get(record.date);
+        if (!existing || record.updatedAt > existing.updatedAt) {
+          map.set(record.date, record);
+        }
       }
       this.attendanceMap.set(map);
 
