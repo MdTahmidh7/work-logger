@@ -15,7 +15,7 @@ export class ChartCardComponent implements OnDestroy {
   title = input.required<string>();
   type = input<'line' | 'bar' | 'doughnut'>('line');
   labels = input.required<string[]>();
-  datasets = input.required<{ label: string; data: number[]; color: string; backgroundColor?: string[]; minBarLength?: number }[]>();
+  datasets = input.required<{ label: string; data: number[]; color: string; backgroundColor?: string[]; minBarLength?: number; tooltipLabels?: (string | undefined)[] }[]>();
   chartColor = input<string>('#6750a4');
   cardBg = input<string>('var(--pwl-surface)');
   showLegend = input(false);
@@ -63,7 +63,8 @@ export class ChartCardComponent implements OnDestroy {
           pointHoverRadius: 6,
           pointBackgroundColor: dsColor,
           pointBorderColor: '#fff',
-          pointBorderWidth: 2
+          pointBorderWidth: 2,
+          tooltipLabels: ds.tooltipLabels
         };
       } else {
         return {
@@ -73,7 +74,8 @@ export class ChartCardComponent implements OnDestroy {
           borderColor: ds.backgroundColor || dsColor,
           borderWidth: 1,
           borderRadius: 6,
-          minBarLength: ds.minBarLength
+          minBarLength: ds.minBarLength,
+          tooltipLabels: ds.tooltipLabels
         };
       }
     });
@@ -110,7 +112,16 @@ export class ChartCardComponent implements OnDestroy {
             cornerRadius: 10,
             padding: 12,
             titleFont: { family: 'Inter', weight: 'bold' as const },
-            bodyFont: { family: 'Inter' }
+            bodyFont: { family: 'Inter' },
+            callbacks: {
+              label: (ctx) => {
+                const labels = (ctx.dataset as { tooltipLabels?: (string | undefined)[] }).tooltipLabels;
+                const custom = labels?.[ctx.dataIndex];
+                if (custom) return custom;
+                if (this.type() === 'doughnut') return `${ctx.dataset.label}: ${ctx.parsed}`;
+                return `${ctx.dataset.label}: ${ctx.parsed.y}`;
+              }
+            }
           }
         },
         scales: this.type() === 'doughnut' ? {} : {

@@ -152,30 +152,41 @@ export class DashboardComponent implements OnInit {
         deduped.set(att.date, att);
       }
     }
-    const data: number[] = [];
-    const colors: string[] = [];
+    const rawHours: number[] = [];
+    const types: string[] = [];
     for (let i = 0; i < 30; i++) {
       const d = subDays(today, 29 - i);
       const dateStr = format(d, 'yyyy-MM-dd');
-      data.push(+((byDate.get(dateStr) || 0) / 60).toFixed(1));
+      rawHours.push(+((byDate.get(dateStr) || 0) / 60).toFixed(1));
       const type = deduped.get(dateStr)?.dayType;
       const day = d.getDay();
       if (type === 'holiday') {
-        colors.push(DashboardComponent.DAY_COLORS.holiday);
+        types.push('holiday');
       } else if (type === 'leave') {
-        colors.push(DashboardComponent.DAY_COLORS.leave);
+        types.push('leave');
       } else if (day === 5 || day === 6) {
-        colors.push(DashboardComponent.DAY_COLORS.weekend);
+        types.push('weekend');
       } else {
-        colors.push(DashboardComponent.DAY_COLORS.working);
+        types.push('working');
       }
     }
+    const maxHours = Math.max(...rawHours, 0);
+    const data = rawHours.map((h, i) => (types[i] === 'working' ? h : maxHours));
+    const colors = types.map(t => DashboardComponent.DAY_COLORS[t as keyof typeof DashboardComponent.DAY_COLORS]);
+    const tooltipLabels = rawHours.map((h, i) => {
+      if (types[i] === 'working') return undefined;
+      const label = types[i] === 'weekend' ? 'Weekend'
+        : types[i] === 'holiday' ? 'Holiday'
+        : 'Leave';
+      return `${label} · ${h}h`;
+    });
     return [{
       label: 'Hours',
       data,
       color: '#0d9488',
       backgroundColor: colors,
-      minBarLength: 4
+      minBarLength: 4,
+      tooltipLabels
     }];
   });
 
