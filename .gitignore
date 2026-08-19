@@ -44,3 +44,5 @@ src/environments/environment.prod.ts
 # System files
 .DS_Store
 Thumbs.db
+package-lock.json
+.opencode/
