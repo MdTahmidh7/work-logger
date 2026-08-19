@@ -15,9 +15,11 @@ export class ChartCardComponent implements OnDestroy {
   title = input.required<string>();
   type = input<'line' | 'bar' | 'doughnut'>('line');
   labels = input.required<string[]>();
-  datasets = input.required<{ label: string; data: number[]; color: string }[]>();
+  datasets = input.required<{ label: string; data: number[]; color: string; backgroundColor?: string[]; minBarLength?: number }[]>();
   chartColor = input<string>('#6750a4');
   cardBg = input<string>('var(--pwl-surface)');
+  showLegend = input(false);
+  legendItems = input<{ label: string; color: string }[]>([]);
 
   canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
 
@@ -67,10 +69,11 @@ export class ChartCardComponent implements OnDestroy {
         return {
           label: ds.label,
           data: ds.data,
-          backgroundColor: dsColor + 'CC',
-          borderColor: dsColor,
+          backgroundColor: ds.backgroundColor || dsColor + 'CC',
+          borderColor: ds.backgroundColor || dsColor,
           borderWidth: 1,
-          borderRadius: 6
+          borderRadius: 6,
+          minBarLength: ds.minBarLength
         };
       }
     });
@@ -84,8 +87,20 @@ export class ChartCardComponent implements OnDestroy {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        cutout: this.type() === 'doughnut' ? '65%' : undefined,
         plugins: {
-          legend: { display: false },
+          legend: {
+            display: this.showLegend(),
+            position: 'bottom',
+            labels: {
+              color: isDark ? '#a1a1a6' : '#6e6e73',
+              usePointStyle: true,
+              pointStyle: 'circle',
+              boxWidth: 8,
+              padding: 14,
+              font: { family: 'Inter', size: 12 }
+            }
+          },
           tooltip: {
             backgroundColor: isDark ? '#2c2c2e' : '#ffffff',
             titleColor: isDark ? '#f5f5f7' : '#1d1d1f',

@@ -18,7 +18,7 @@ import { Attendance } from '../attendance/models/attendance.model';
 import { AttendanceService } from '../attendance/services/attendance.service';
 import { WorkLogService } from '../work-log/services/work-log.service';
 import { formatWorkingHoursColon } from '../../core/utils/format.utils';
-import { getDaysInMonth, parseISO, subDays, format, isAfter, isBefore } from 'date-fns';
+import { subDays, format } from 'date-fns';
 
 @Component({
   standalone: true,
@@ -32,6 +32,12 @@ import { getDaysInMonth, parseISO, subDays, format, isAfter, isBefore } from 'da
 })
 export class DashboardComponent implements OnInit {
   private static readonly FULL_DAY_MINUTES = 420;
+  private static readonly DAY_COLORS = {
+    working: '#0d9488',
+    weekend: '#6b7280',
+    holiday: '#3b82f6',
+    leave: '#f97316'
+  };
   private dateUtils = inject(DateUtilsService);
   private attendanceService = inject(AttendanceService);
   private workLogService = inject(WorkLogService);
@@ -108,38 +114,77 @@ export class DashboardComponent implements OnInit {
     };
   });
 
-  hourlyLabels = computed(() => Array.from({ length: 24 }, (_, i) => `${i}:00`));
-
-  hourlyDataset = computed(() => {
-    const today = this.dateUtils.today();
-    const todayLogs = this.logs().filter(l => l.date === today);
-    const hourlyData = new Array(24).fill(0);
-    for (const log of todayLogs) {
-      const hour = new Date(log.createdAt).getHours();
-      hourlyData[hour] += log.durationMinutes / 60;
-    }
-    return [{ label: 'Hours', data: hourlyData.map(h => +h.toFixed(1)), color: '#6750a4' }];
+  attendanceBreakdown = computed(() => {
+    const s = this.attendanceStats();
+    const items = [
+      { label: 'Present', value: s.presentDays, color: '#0d9488' },
+      { label: 'NFOH', value: s.nfohDays, color: '#d97706' },
+      { label: 'Absent', value: s.absentDays, color: '#9ca3af' },
+      { label: 'Holiday', value: s.holidayDays, color: '#3b82f6' },
+      { label: 'Leave', value: s.leaveDays, color: '#f97316' }
+    ].filter(i => i.value > 0);
+    return {
+      labels: items.map(i => i.label),
+      datasets: [{
+        label: 'Days',
+        data: items.map(i => i.value),
+        color: '#6750a4',
+        backgroundColor: items.map(i => i.color)
+      }]
+    };
   });
 
-  monthlyLabels = computed(() => {
-    const range = this.dateUtils.getDateRange('thisMonth');
-    const date = parseISO(range.startDate);
-    const days = getDaysInMonth(date);
-    return Array.from({ length: days }, (_, i) => `${i + 1}`);
+  last30Labels = computed(() => {
+    const today = new Date();
+    return Array.from({ length: 30 }, (_, i) => format(subDays(today, 29 - i), 'MMM d'));
   });
 
-  monthlyDataset = computed(() => {
-    const range = this.dateUtils.getDateRange('thisMonth');
-    const days = getDaysInMonth(parseISO(range.startDate));
-    const dailyData = new Array(days).fill(0);
+  last30Dataset = computed(() => {
+    const today = new Date();
+    const byDate = new Map<string, number>();
     for (const log of this.logs()) {
-      const day = parseISO(log.date).getDate();
-      if (day >= 1 && day <= days) {
-        dailyData[day - 1] += log.durationMinutes / 60;
+      byDate.set(log.date, (byDate.get(log.date) || 0) + log.durationMinutes);
+    }
+    const deduped = new Map<string, Attendance>();
+    for (const att of this.attendanceRecords()) {
+      const existing = deduped.get(att.date);
+      if (!existing || att.updatedAt > existing.updatedAt) {
+        deduped.set(att.date, att);
       }
     }
-    return [{ label: 'Hours', data: dailyData.map(h => +h.toFixed(1)), color: '#0d9488' }];
+    const data: number[] = [];
+    const colors: string[] = [];
+    for (let i = 0; i < 30; i++) {
+      const d = subDays(today, 29 - i);
+      const dateStr = format(d, 'yyyy-MM-dd');
+      data.push(+((byDate.get(dateStr) || 0) / 60).toFixed(1));
+      const type = deduped.get(dateStr)?.dayType;
+      const day = d.getDay();
+      if (type === 'holiday') {
+        colors.push(DashboardComponent.DAY_COLORS.holiday);
+      } else if (type === 'leave') {
+        colors.push(DashboardComponent.DAY_COLORS.leave);
+      } else if (day === 5 || day === 6) {
+        colors.push(DashboardComponent.DAY_COLORS.weekend);
+      } else {
+        colors.push(DashboardComponent.DAY_COLORS.working);
+      }
+    }
+    return [{
+      label: 'Hours',
+      data,
+      color: '#0d9488',
+      backgroundColor: colors,
+      minBarLength: 4
+    }];
   });
+
+  dayChartLegend = [
+    { label: 'Working Day', color: DashboardComponent.DAY_COLORS.working },
+    { label: 'Weekend (Fri/Sat)', color: DashboardComponent.DAY_COLORS.weekend },
+    { label: 'Holiday', color: DashboardComponent.DAY_COLORS.holiday },
+    { label: 'Leave', color: DashboardComponent.DAY_COLORS.leave }
+  ];
 
   groupedLogs = computed(() => {
     const logs = this.logs();

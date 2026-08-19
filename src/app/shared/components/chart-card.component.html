@@ -5,4 +5,14 @@
   <div class="chart-container">
     <canvas #canvas></canvas>
   </div>
+  @if (legendItems().length) {
+    <div class="chart-legend">
+      @for (item of legendItems(); track item.label) {
+        <span class="legend-item">
+          <span class="legend-dot" [style.background]="item.color"></span>
+          {{ item.label }}
+        </span>
+      }
+    </div>
+  }
 </div>

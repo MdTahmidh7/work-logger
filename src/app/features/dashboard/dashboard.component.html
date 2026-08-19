@@ -99,12 +99,13 @@
       @if (!loading()) {
       <div class="dashboard">
         <div class="charts-row">
-          <app-chart-card title="Hours by Hour (Today)" type="bar"
-                          [labels]="hourlyLabels()" [datasets]="hourlyDataset()"
-                          chartColor="#6750a4" />
-          <app-chart-card title="Hours by Day (Month)" type="bar"
-                          [labels]="monthlyLabels()" [datasets]="monthlyDataset()"
-                          chartColor="#0d9488" />
+          <app-chart-card title="Attendance Breakdown (Last 30 Days)" type="doughnut"
+                          [labels]="attendanceBreakdown().labels"
+                          [datasets]="attendanceBreakdown().datasets"
+                          chartColor="#6750a4" [showLegend]="true" />
+          <app-chart-card title="Hours by Day (Last 30 Days)" type="bar"
+                          [labels]="last30Labels()" [datasets]="last30Dataset()"
+                          chartColor="#0d9488" [legendItems]="dayChartLegend" />
         </div>
 
         <div class="recent-section">
