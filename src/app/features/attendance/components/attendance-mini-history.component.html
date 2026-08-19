@@ -1,0 +1,35 @@
+    <div class="mini-history-card">
+      <div class="mini-history-header">
+        <h3>Last 7 Days Attendance</h3>
+      </div>
+      <div class="mini-history-list">
+        @for (row of rows(); track row.date) {
+          <div class="mini-row" [class.today]="row.isToday">
+            <div class="mh-icon" [class]="row.status" [matTooltip]="statusTooltip(row.status)">
+              <mat-icon>{{ statusIcon(row.status) }}</mat-icon>
+            </div>
+            <div class="mh-date">
+              <span class="mh-date-text">{{ row.dateLabel }}</span>
+              <span class="mh-day-text">{{ row.dayName }}</span>
+            </div>
+            @if (row.showTimes) {
+              <div class="mh-times">
+                <div class="mh-time">
+                  <mat-icon class="punch-in">login</mat-icon>
+                  <span>{{ formatTime(row.attendance!.firstPunchIn) }}</span>
+                </div>
+                <div class="mh-time">
+                  <mat-icon class="punch-out">logout</mat-icon>
+                  <span>{{ row.attendance!.lastPunchOut ? formatTime(row.attendance!.lastPunchOut) : '--' }}</span>
+                </div>
+                <div class="mh-hours">
+                  <span class="hours-badge">{{ formatWorkingHours(row.attendance!.workingMinutes) }} h</span>
+                </div>
+              </div>
+            } @else {
+              <div class="mh-status" [class]="row.status">{{ row.status }}</div>
+            }
+          </div>
+        }
+      </div>
+    </div>

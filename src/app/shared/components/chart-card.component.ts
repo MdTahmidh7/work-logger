@@ -67,13 +67,30 @@ export class ChartCardComponent implements OnDestroy {
           tooltipLabels: ds.tooltipLabels
         };
       } else {
+        const isBar = this.type() === 'bar';
+        const bg = ds.backgroundColor;
         return {
           label: ds.label,
           data: ds.data,
-          backgroundColor: ds.backgroundColor || dsColor + 'CC',
-          borderColor: ds.backgroundColor || dsColor,
-          borderWidth: 1,
-          borderRadius: 6,
+          backgroundColor: bg && isBar
+            ? (ctx: any) => {
+                const color = (bg as string[])[ctx.dataIndex] || dsColor;
+                const { ctx: c, chartArea } = ctx.chart;
+                if (!chartArea) return color;
+                const grad = c.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                grad.addColorStop(0, color + '40');
+                grad.addColorStop(1, color);
+                return grad;
+              }
+            : bg || dsColor + 'CC',
+          borderColor: bg && isBar
+            ? (ctx: any) => (bg as string[])[ctx.dataIndex] || dsColor
+            : bg || dsColor,
+          borderWidth: isBar ? 0 : 1,
+          borderRadius: isBar ? 8 : 6,
+          borderSkipped: isBar ? false : undefined,
+          barPercentage: isBar ? 0.65 : undefined,
+          categoryPercentage: isBar ? 0.85 : undefined,
           minBarLength: ds.minBarLength,
           tooltipLabels: ds.tooltipLabels
         };
@@ -127,16 +144,25 @@ export class ChartCardComponent implements OnDestroy {
         scales: this.type() === 'doughnut' ? {} : {
           x: {
             grid: { display: false },
+            border: { display: false },
             ticks: {
               color: isDark ? '#a1a1a6' : '#6e6e73',
-              font: { family: 'Inter', size: 11 }
+              font: { family: 'Inter', size: 11 },
+              autoSkip: true,
+              maxTicksLimit: 10,
+              maxRotation: 0
             }
           },
           y: {
-            grid: { color: isDark ? '#2c2c2e' : '#f0f0f2' },
+            border: { display: false },
+            grid: {
+              color: isDark ? 'rgba(161, 161, 166, 0.08)' : 'rgba(110, 110, 115, 0.10)',
+              drawTicks: false
+            },
             ticks: {
               color: isDark ? '#a1a1a6' : '#6e6e73',
-              font: { family: 'Inter', size: 11 }
+              font: { family: 'Inter', size: 11 },
+              padding: 8
             },
             beginAtZero: true
           }

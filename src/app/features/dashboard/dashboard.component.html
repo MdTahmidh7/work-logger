@@ -99,10 +99,7 @@
       @if (!loading()) {
       <div class="dashboard">
         <div class="charts-row">
-          <app-chart-card title="Attendance Breakdown (Last 30 Days)" type="doughnut"
-                          [labels]="attendanceBreakdown().labels"
-                          [datasets]="attendanceBreakdown().datasets"
-                          chartColor="#6750a4" [showLegend]="true" />
+          <app-attendance-mini-history [records]="attendanceRecords()" />
           <app-chart-card title="Hours by Day (Last 30 Days)" type="bar"
                           [labels]="last30Labels()" [datasets]="last30Dataset()"
                           chartColor="#0d9488" [legendItems]="dayChartLegend" />

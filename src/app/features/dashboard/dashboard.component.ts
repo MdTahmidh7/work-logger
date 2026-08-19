@@ -8,6 +8,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ChartCardComponent } from '../../shared/components/chart-card.component';
 import { DateFilterComponent } from '../../shared/components/date-filter.component';
 import { TodayAttendanceCardComponent } from '../attendance/components/today-attendance-card.component';
+import { AttendanceMiniHistoryComponent } from '../attendance/components/attendance-mini-history.component';
 import { AttendanceActionButtonComponent } from '../attendance/components/attendance-action-button.component';
 import { DashboardSkeletonComponent } from '../../shared/components/skeletons/dashboard-skeleton.component';
 import { DateUtilsService } from '../../core/services/date-utils.service';
@@ -26,6 +27,7 @@ import { subDays, format } from 'date-fns';
   imports: [CommonModule, FormsModule, RouterModule, MatIconModule, MatButtonModule,
             MatTooltipModule, ChartCardComponent, DateFilterComponent,
             TodayAttendanceCardComponent, AttendanceActionButtonComponent,
+            AttendanceMiniHistoryComponent,
             DashboardSkeletonComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
@@ -111,26 +113,6 @@ export class DashboardComponent implements OnInit {
       totalHours: (totalMinutes / 60).toFixed(1) + 'h',
       todayHours: this.formatWorkingHours(todayMinutes),
       avgHours: (avgMinutes / 60).toFixed(2) + 'h'
-    };
-  });
-
-  attendanceBreakdown = computed(() => {
-    const s = this.attendanceStats();
-    const items = [
-      { label: 'Present', value: s.presentDays, color: '#0d9488' },
-      { label: 'NFOH', value: s.nfohDays, color: '#d97706' },
-      { label: 'Absent', value: s.absentDays, color: '#9ca3af' },
-      { label: 'Holiday', value: s.holidayDays, color: '#3b82f6' },
-      { label: 'Leave', value: s.leaveDays, color: '#f97316' }
-    ].filter(i => i.value > 0);
-    return {
-      labels: items.map(i => i.label),
-      datasets: [{
-        label: 'Days',
-        data: items.map(i => i.value),
-        color: '#6750a4',
-        backgroundColor: items.map(i => i.color)
-      }]
     };
   });
 
