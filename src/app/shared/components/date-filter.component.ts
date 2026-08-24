@@ -80,9 +80,9 @@ export class DateFilterComponent implements OnInit {
   }
 
   resetFilters(): void {
-    this.selected.set('');
+    this.selected.set('last30Days');
     this.showCustom.set(false);
-    const range = this.dateUtils.getDateRange('allTime');
+    const range = this.dateUtils.getDateRange('last30Days');
     this.rangeChange.emit(range);
   }
 

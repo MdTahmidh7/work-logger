@@ -224,7 +224,7 @@ export class DashboardComponent implements OnInit {
       const range = this.dateUtils.getDateRange('last30Days');
 
       const [logs, attendance, records] = await Promise.all([
-        this.workLogService.getAll().catch(e => {
+        this.workLogService.getByRange(range.startDate, range.endDate).catch(e => {
           console.error('Failed to load work logs:', e);
           this.notify.error('Failed to load work logs: ' + (e instanceof Error ? e.message : 'Unknown error'));
           return [] as WorkLog[];
@@ -233,7 +233,7 @@ export class DashboardComponent implements OnInit {
           console.error('Failed to load attendance:', e);
           return undefined as Attendance | undefined;
         }),
-        this.attendanceService.getAttendanceHistory().catch(e => {
+        this.attendanceService.getAttendanceByDateRange(range.startDate, range.endDate).catch(e => {
           console.error('Failed to load attendance records:', e);
           return [] as Attendance[];
         })
