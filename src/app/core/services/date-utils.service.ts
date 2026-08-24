@@ -52,6 +52,11 @@ export class DateUtilsService {
         return { startDate: format(yearStart, 'yyyy-MM-dd'), endDate: format(now, 'yyyy-MM-dd') };
       }
 
+      case 'allTime':{
+        return { startDate: '1970-01-01', endDate: format(now, 'yyyy-MM-dd') };
+      }
+        
+
       default:
         return { startDate: format(now, 'yyyy-MM-dd'), endDate: format(now, 'yyyy-MM-dd') };
     }

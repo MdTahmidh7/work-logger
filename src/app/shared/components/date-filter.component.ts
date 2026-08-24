@@ -78,4 +78,12 @@ export class DateFilterComponent implements OnInit {
       endDate: this.customEnd()
     });
   }
+
+  resetFilters(): void {
+    this.selected.set('');
+    this.showCustom.set(false);
+    const range = this.dateUtils.getDateRange('allTime');
+    this.rangeChange.emit(range);
+  }
+
 }

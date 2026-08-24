@@ -11,6 +11,11 @@
     <mat-icon>tune</mat-icon>
     <span>Custom</span>
   </button>
+  <button class="filter-btn custom-btn" [class.active]="selected() === 'reset'"
+          (click)="resetFilters()">
+    <mat-icon>refresh</mat-icon>
+    <span>Reset</span>
+  </button>
   @if (showCustom()) {
     <div class="custom-range">
       <input type="date" [value]="customStart()" (change)="onStartChange($event)" class="date-input">

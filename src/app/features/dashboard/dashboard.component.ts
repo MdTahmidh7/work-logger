@@ -56,10 +56,6 @@ export class DashboardComponent implements OnInit {
 
   attendanceStats = computed(() => {
     const records = this.attendanceRecords();
-    const now = new Date();
-    const thirtyDaysAgo = subDays(now, 29);
-    const todayStr = format(now, 'yyyy-MM-dd');
-    const thirtyDaysAgoStr = format(thirtyDaysAgo, 'yyyy-MM-dd');
 
     let presentDays = 0;
     let nfohDays = 0;
@@ -67,38 +63,55 @@ export class DashboardComponent implements OnInit {
     let leaveDays = 0;
     let workingDays = 0;
 
-    const current = new Date(thirtyDaysAgo);
-    while (current <= now) {
-      const day = current.getDay();
-      if (day !== 5 && day !== 6) {
-        workingDays++;
-      }
-      current.setDate(current.getDate() + 1);
-    }
-
     const byDate = new Map<string, typeof records[number]>();
+
+    // Keep only the latest record for each date
     for (const att of records) {
       const existing = byDate.get(att.date);
+
       if (!existing || att.updatedAt > existing.updatedAt) {
         byDate.set(att.date, att);
       }
     }
 
+    // Calculate statistics for ALL attendance records
     byDate.forEach((att) => {
-      if (att.date < thirtyDaysAgoStr || att.date > todayStr) return;
+      const day = new Date(att.date).getDay();
+
+      // Sunday-Thursday are working days
+      if (day !== 5 && day !== 6) {
+        workingDays++;
+      }
+
       if (att.dayType === 'holiday') {
         holidayDays++;
       } else if (att.dayType === 'leave') {
         leaveDays++;
-      } else if (att.workingMinutes >= DashboardComponent.FULL_DAY_MINUTES) {
+      } else if (
+        att.workingMinutes >= DashboardComponent.FULL_DAY_MINUTES
+      ) {
         presentDays++;
       } else if (att.workingMinutes > 0) {
         nfohDays++;
       }
     });
 
-    const absentDays = Math.max(0, workingDays - presentDays - nfohDays - holidayDays - leaveDays);
-    return { presentDays, absentDays, nfohDays, holidayDays, leaveDays };
+    const absentDays = Math.max(
+      0,
+      workingDays -
+        presentDays -
+        nfohDays -
+        holidayDays -
+        leaveDays
+    );
+
+    return {
+      presentDays,
+      absentDays,
+      nfohDays,
+      holidayDays,
+      leaveDays
+    };
   });
 
   workLogStats = computed(() => {
@@ -211,7 +224,7 @@ export class DashboardComponent implements OnInit {
       const range = this.dateUtils.getDateRange('last30Days');
 
       const [logs, attendance, records] = await Promise.all([
-        this.workLogService.getByRange(range.startDate, range.endDate).catch(e => {
+        this.workLogService.getAll().catch(e => {
           console.error('Failed to load work logs:', e);
           this.notify.error('Failed to load work logs: ' + (e instanceof Error ? e.message : 'Unknown error'));
           return [] as WorkLog[];
@@ -220,7 +233,7 @@ export class DashboardComponent implements OnInit {
           console.error('Failed to load attendance:', e);
           return undefined as Attendance | undefined;
         }),
-        this.attendanceService.getAttendanceByDateRange(range.startDate, range.endDate).catch(e => {
+        this.attendanceService.getAttendanceHistory().catch(e => {
           console.error('Failed to load attendance records:', e);
           return [] as Attendance[];
         })
@@ -239,6 +252,7 @@ export class DashboardComponent implements OnInit {
     this.loading.set(true);
     try {
       this.logs.set(await this.workLogService.getByRange(range.startDate, range.endDate));
+      this.attendanceRecords.set(await this.attendanceService.getAttendanceByDateRange(range.startDate, range.endDate));
     } catch (e) {
       console.error('Failed to load work logs:', e);
       this.notify.error('Failed to load work logs: ' + (e instanceof Error ? e.message : 'Unknown error'));
