@@ -20,7 +20,7 @@ export class WeekendProgressComponent implements OnInit, OnDestroy, AfterViewIni
   @ViewChild('minutesStrip') minutesStrip!: ElementRef<HTMLElement>;
 
   private targetMinutes = 0;
-  private currentY = 0;
+  private currentY = -1;
   private rafId: number | null = null;
   private timerInterval: ReturnType<typeof setInterval> | null = null;
   private readonly DIGIT_HEIGHT = 42;
@@ -31,26 +31,18 @@ export class WeekendProgressComponent implements OnInit, OnDestroy, AfterViewIni
   }
 
   ngOnInit(): void {
-    const now = new Date();
-    const countdown = this.calcCountdown(now);
-    this.targetMinutes = countdown.minutes;
-    this.currentY = countdown.minutes;
-    this.days.set(countdown.days);
-    this.hours.set(countdown.hours);
-    this.applyTransform();
-
-    const p = this.calcProgress(now);
-    this.weekProgressPercent.set(p.percent);
-    this.elapsedLabel.set(p.elapsed);
-    this.remainingLabel.set(p.remaining);
+    this.refreshValues();
 
     this.zone.runOutsideAngular(() => {
-      this.timerInterval = setInterval(() => this.zone.run(() => this.update()), 1000);
+      this.timerInterval = setInterval(() => this.zone.run(() => this.refreshValues()), 1000);
     });
   }
 
   ngAfterViewInit(): void {
-    setTimeout(() => this.startAnimation());
+    setTimeout(() => {
+      this.applyTransform(true);
+      this.startAnimation();
+    });
   }
 
   ngOnDestroy(): void {
@@ -58,7 +50,7 @@ export class WeekendProgressComponent implements OnInit, OnDestroy, AfterViewIni
     if (this.timerInterval) clearInterval(this.timerInterval);
   }
 
-  private update(): void {
+  private refreshValues(): void {
     const now = new Date();
     const countdown = this.calcCountdown(now);
     this.days.set(countdown.days);
@@ -74,22 +66,26 @@ export class WeekendProgressComponent implements OnInit, OnDestroy, AfterViewIni
   private startAnimation(): void {
     const animate = () => {
       if (Math.abs(this.currentY - this.targetMinutes) > 0.01) {
-        this.currentY += (this.targetMinutes - this.currentY) * 0.06;
-        this.applyTransform();
+        this.currentY += (this.targetMinutes - this.currentY) * 0.08;
+        this.applyTransform(false);
       } else if (this.currentY !== this.targetMinutes) {
         this.currentY = this.targetMinutes;
-        this.applyTransform();
+        this.applyTransform(false);
       }
       this.rafId = requestAnimationFrame(animate);
     };
     this.rafId = requestAnimationFrame(animate);
   }
 
-  private applyTransform(): void {
-    if (this.minutesStrip?.nativeElement) {
-      this.minutesStrip.nativeElement.style.transform =
-        `translateY(${-this.currentY * this.DIGIT_HEIGHT}px)`;
+  private applyTransform(instant: boolean): void {
+    if (!this.minutesStrip?.nativeElement) return;
+    const el = this.minutesStrip.nativeElement;
+    if (instant) {
+      el.style.transition = 'none';
+    } else {
+      el.style.transition = '';
     }
+    el.style.transform = `translateY(${-this.currentY * this.DIGIT_HEIGHT}px)`;
   }
 
   private calcCountdown(now: Date): { days: number; hours: number; minutes: number } {
