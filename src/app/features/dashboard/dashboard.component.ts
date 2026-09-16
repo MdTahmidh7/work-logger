@@ -11,6 +11,7 @@ import { TodayAttendanceCardComponent } from '../attendance/components/today-att
 import { AttendanceMiniHistoryComponent } from '../attendance/components/attendance-mini-history.component';
 import { AttendanceActionButtonComponent } from '../attendance/components/attendance-action-button.component';
 import { DashboardSkeletonComponent } from '../../shared/components/skeletons/dashboard-skeleton.component';
+import { WeekendProgressComponent } from './components/weekend-progress/weekend-progress.component';
 import { DateUtilsService } from '../../core/services/date-utils.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ResponsiveService } from '../../core/services/responsive.service';
@@ -20,6 +21,8 @@ import { AttendanceService } from '../attendance/services/attendance.service';
 import { WorkLogService } from '../work-log/services/work-log.service';
 import { formatWorkingHoursColon } from '../../core/utils/format.utils';
 import { subDays, format } from 'date-fns';
+import { WEEKEND_MESSAGES } from '../../core/config/weekend-messages.config';
+import Swal from 'sweetalert2';
 
 @Component({
   standalone: true,
@@ -28,7 +31,7 @@ import { subDays, format } from 'date-fns';
             MatTooltipModule, ChartCardComponent, DateFilterComponent,
             TodayAttendanceCardComponent, AttendanceActionButtonComponent,
             AttendanceMiniHistoryComponent,
-            DashboardSkeletonComponent],
+            DashboardSkeletonComponent, WeekendProgressComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })
@@ -242,6 +245,8 @@ export class DashboardComponent implements OnInit {
       this.logs.set(logs);
       this.todayAttendance.set(attendance || null);
       this.attendanceRecords.set(records);
+
+      this.checkAndShowWeekendBanner();
     } finally {
       this.loading.set(false);
     }
@@ -298,5 +303,44 @@ export class DashboardComponent implements OnInit {
 
   formatWorkingHours(minutes: number): string {
     return formatWorkingHoursColon(minutes);
+  }
+
+  private checkAndShowWeekendBanner(): void {
+    const now = new Date();
+    const day = now.getDay();
+    const todayStr = format(now, 'yyyy-MM-dd');
+    const dismissKey = `weekend-banner-dismissed-${todayStr}`;
+
+    if (day !== 4) return;
+    if (localStorage.getItem(dismissKey)) return;
+
+    const weekNumber = this.getWeekNumber(now);
+    const messageIndex = weekNumber % WEEKEND_MESSAGES.length;
+    const msg = WEEKEND_MESSAGES[messageIndex];
+
+    Swal.fire({
+      title: `<span style="font-size:20px">${msg.emoji} ${msg.title}</span>`,
+      html: `<p style="font-size:15px;line-height:1.6;margin:0;color:#555">${msg.message}</p>`,
+      icon: 'info',
+      iconColor: '#6750a4',
+      confirmButtonText: 'Got it!',
+      customClass: {
+        popup: 'weekend-banner-popup',
+        confirmButton: 'weekend-banner-confirm'
+      },
+      showCloseButton: true,
+      closeButtonHtml: '<span style="font-size:18px">&times;</span>',
+      didClose: () => {
+        localStorage.setItem(dismissKey, '1');
+      }
+    });
+  }
+
+  private getWeekNumber(date: Date): number {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
   }
 }

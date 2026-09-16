@@ -1,0 +1,46 @@
+<div class="weekend-progress-card">
+  <div class="wp-top">
+    <div class="wp-countdown-section">
+      <div class="wp-countdown-header">
+        <mat-icon class="wp-icon">timer</mat-icon>
+        <span class="wp-title">Weekend Countdown</span>
+      </div>
+      <div class="wp-countdown-values">
+        <div class="wp-block">
+          <div class="wp-static-value">{{ days() < 10 ? '0' + days() : days() }}</div>
+          <span class="wp-unit">Days</span>
+        </div>
+        <span class="wp-sep">:</span>
+        <div class="wp-block">
+          <div class="wp-static-value">{{ hours() < 10 ? '0' + hours() : hours() }}</div>
+          <span class="wp-unit">Hrs</span>
+        </div>
+        <span class="wp-sep">:</span>
+        <div class="wp-block">
+          <div class="wp-viewport">
+            <div class="wp-strip" #minutesStrip>
+              @for (m of minutesArrayRef; track m) {
+                <div class="wp-digit">{{ formatDigit(m) }}</div>
+              }
+            </div>
+          </div>
+          <span class="wp-unit">Min</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="wp-progress-section">
+      <div class="wp-bar-labels">
+        <span class="wp-label-left">Week Start (Sun 9 AM)</span>
+        <span class="wp-label-right">Week End (Thu 5 PM)</span>
+      </div>
+      <div class="wp-bar-track">
+        <div class="wp-bar-fill" [style.width.%]="weekProgressPercent()"></div>
+      </div>
+      <div class="wp-bar-info">
+        <span class="wp-elapsed">Elapsed: {{ elapsedLabel() }}</span>
+        <span class="wp-remaining">Remaining: {{ remainingLabel() }}</span>
+      </div>
+    </div>
+  </div>
+</div>
