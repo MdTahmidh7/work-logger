@@ -210,3 +210,88 @@
     font-size: 10px;
   }
 }
+
+// -----------------
+
+@property --border-progress {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 100;
+}
+
+.wp-viewport {
+  --border-progress: 100;
+  --border-color: #7b3bc5;
+  --background-color: #ffffff;
+  --border-width: 2px;
+
+  position: relative;
+  border-radius: 8px;
+  padding: var(--border-width);
+
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent calc((100 - var(--border-progress)) * 3.6deg),
+    var(--border-color) calc((100 - var(--border-progress)) * 3.6deg),
+    var(--border-color) 360deg
+  );
+}
+
+.wp-viewport::before {
+  content: "";
+  position: absolute;
+  inset: var(--border-width);
+
+  background: var(--background-color);
+  border-radius: 6px;
+
+  z-index: 0;
+}
+
+.wp-strip {
+  position: relative;
+  z-index: 1;
+}
+
+// @property --border-progress {
+//   syntax: "<number>";
+//   inherits: false;
+//   initial-value: 100;
+// }
+
+// .wp-viewport {
+//   --border-progress: 100;
+//   --border-color: #8575d0;
+//   --background-color: #ffffff;
+//   --border-width: 2px;
+
+//   position: relative;
+
+//   border-radius: 8px;
+//   padding: var(--border-width);
+
+//   background: conic-gradient(
+//     from -90deg,
+//     var(--border-color) 0%,
+//     var(--border-color) calc(var(--border-progress) * 1%),
+//     transparent calc(var(--border-progress) * 1%),
+//     transparent 100%
+//   );
+// }
+
+// .wp-viewport::before {
+//   content: "";
+//   position: absolute;
+//   inset: var(--border-width);
+
+//   background: var(--background-color);
+//   border-radius: 6px;
+
+//   z-index: 0;
+// }
+
+// .wp-strip {
+//   position: relative;
+//   z-index: 1;
+// }

@@ -17,13 +17,16 @@
         </div>
         <span class="wp-sep">:</span>
         <div class="wp-block">
-          <div class="wp-viewport">
-            <div class="wp-strip" #minutesStrip>
-              @for (m of minutesArrayRef; track m) {
-                <div class="wp-digit">{{ formatDigit(m) }}</div>
-              }
+          <div
+              class="wp-viewport"
+              [style.--border-progress]="borderProgress"
+            >
+              <div class="wp-strip" #minutesStrip>
+                @for (m of minutesArrayRef; track m) {
+                  <div class="wp-digit">{{ formatDigit(m) }}</div>
+                }
+              </div>
             </div>
-          </div>
           <span class="wp-unit">Min</span>
         </div>
       </div>

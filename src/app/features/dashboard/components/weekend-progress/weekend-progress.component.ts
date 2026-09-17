@@ -30,7 +30,17 @@ export class WeekendProgressComponent implements OnInit, OnDestroy, AfterViewIni
     this.minutesArray = Array.from({ length: 60 }, (_, i) => i);
   }
 
+  private borderTimer?: ReturnType<typeof setInterval>;
+
   ngOnInit(): void {
+
+    this.updateBorderProgress();
+
+    this.borderTimer = setInterval(() => {
+        this.updateBorderProgress();
+      }, 50
+    );
+
     this.refreshValues();
 
     this.zone.runOutsideAngular(() => {
@@ -48,6 +58,9 @@ export class WeekendProgressComponent implements OnInit, OnDestroy, AfterViewIni
   ngOnDestroy(): void {
     if (this.rafId !== null) cancelAnimationFrame(this.rafId);
     if (this.timerInterval) clearInterval(this.timerInterval);
+    if (this.borderTimer) {
+    clearInterval(this.borderTimer);
+  }
   }
 
   private refreshValues(): void {
@@ -148,4 +161,18 @@ export class WeekendProgressComponent implements OnInit, OnDestroy, AfterViewIni
   formatDigit(n: number): string {
     return String(n).padStart(2, '0');
   }
+
+  borderProgress = 100;
+
+private updateBorderProgress(): void {
+  const now = new Date();
+
+  const seconds = now.getSeconds();
+  const milliseconds = now.getMilliseconds();
+
+  this.borderProgress =
+    ((60 - seconds - milliseconds / 1000) / 60) * 100;
+}
+
+
 }
