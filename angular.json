@@ -40,7 +40,7 @@
       "prefix": "pwl",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:application",
+          "builder": "@angular/build:application",
           "options": {
             "outputPath": "dist/personal-work-log",
             "index": "src/index.html",
@@ -63,7 +63,11 @@
             "scripts": [],
             "stylePreprocessorOptions": {
               "includePaths": ["node_modules"]
-            }
+            },
+            "allowedCommonJsDependencies": [
+              "sweetalert2",
+              "xlsx"
+            ]
           },
             "configurations": {
             "production": {
@@ -146,5 +150,8 @@
         }
       }
     }
+  },
+  "cli": {
+    "analytics": false
   }
 }
