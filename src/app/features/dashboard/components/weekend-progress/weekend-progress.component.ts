@@ -1,4 +1,4 @@
-import { Component, signal, OnInit, OnDestroy, NgZone, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, signal, OnInit, OnDestroy, NgZone, ElementRef, viewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -17,7 +17,7 @@ export class WeekendProgressComponent implements OnInit, OnDestroy, AfterViewIni
   elapsedLabel = signal<string>('');
   remainingLabel = signal<string>('');
 
-  @ViewChild('minutesStrip') minutesStrip!: ElementRef<HTMLElement>;
+  minutesStrip = viewChild<ElementRef<HTMLElement>>('minutesStrip');
 
   private targetMinutes = 0;
   private currentY = -1;
@@ -91,14 +91,14 @@ export class WeekendProgressComponent implements OnInit, OnDestroy, AfterViewIni
   }
 
   private applyTransform(instant: boolean): void {
-    if (!this.minutesStrip?.nativeElement) return;
-    const el = this.minutesStrip.nativeElement;
+    const stripEl = this.minutesStrip()?.nativeElement;
+    if (!stripEl) return;
     if (instant) {
-      el.style.transition = 'none';
+      stripEl.style.transition = 'none';
     } else {
-      el.style.transition = '';
+      stripEl.style.transition = '';
     }
-    el.style.transform = `translateY(${-this.currentY * this.DIGIT_HEIGHT}px)`;
+    stripEl.style.transform = `translateY(${-this.currentY * this.DIGIT_HEIGHT}px)`;
   }
 
   private calcCountdown(now: Date): { days: number; hours: number; minutes: number } {

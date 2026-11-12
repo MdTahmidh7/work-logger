@@ -1,25 +1,26 @@
-import { Component, inject, signal, HostListener, DestroyRef } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { AuthService } from '../../core/services/auth.service';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   standalone: true,
   selector: 'app-header',
   imports: [CommonModule, RouterModule, MatIconModule, MatButtonModule],
   templateUrl: './header.component.html',
-  styleUrls: ['./header.component.scss']
+  styleUrls: ['./header.component.scss'],
+  host: {
+    '(document:click)': 'onDocumentClick($event)'
+  }
 })
 export class HeaderComponent {
   isDark = signal(false);
   mobileMenuOpen = signal(false);
   private authService = inject(AuthService);
-  private destroyRef = inject(DestroyRef);
 
-  userEmail = signal('');
+  userEmail = computed(() => this.authService.currentUser()?.email || '');
 
   constructor() {
     const saved = localStorage.getItem('theme');
@@ -27,15 +28,8 @@ export class HeaderComponent {
       this.isDark.set(true);
       document.documentElement.setAttribute('data-theme', 'dark');
     }
-
-    this.authService.currentUser$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(user => {
-      if (user?.email) {
-        this.userEmail.set(user.email);
-      }
-    });
   }
 
-  @HostListener('document:click', ['$event'])
   onDocumentClick(event: Event): void {
     const target = event.target as HTMLElement;
     if (this.mobileMenuOpen() && !target.closest('.header') && !target.closest('.mobile-overlay')) {

@@ -2,6 +2,7 @@ import { Component, output, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { DateUtilsService } from '../../../core/services/date-utils.service';
+import { DateFilterType } from '../../../core/models/work-log.model';
 
 @Component({
   standalone: true,
@@ -15,7 +16,7 @@ export class AttendanceFiltersComponent {
 
   rangeChange = output<{ startDate: string; endDate: string }>();
 
-  filters = [
+  filters: { value: DateFilterType; label: string; icon: string }[] = [
     { value: 'today', label: 'Today', icon: 'today' },
     { value: 'yesterday', label: 'Yesterday', icon: 'history' },
     { value: 'thisWeek', label: 'This Week', icon: 'date_range' },
@@ -25,7 +26,7 @@ export class AttendanceFiltersComponent {
     { value: 'thisYear', label: 'This Year', icon: 'event' }
   ];
 
-  selected = signal('thisMonth');
+  selected = signal<DateFilterType | 'custom'>('thisMonth');
   showCustom = signal(false);
   customStart = signal(new Date().toISOString().split('T')[0]);
   customEnd = signal(new Date().toISOString().split('T')[0]);
@@ -35,7 +36,7 @@ export class AttendanceFiltersComponent {
     this.rangeChange.emit(range);
   }
 
-  select(value: string): void {
+  select(value: DateFilterType): void {
     this.selected.set(value);
     this.showCustom.set(false);
     const range = this.dateUtils.getDateRange(value);
