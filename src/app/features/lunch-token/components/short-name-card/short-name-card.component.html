@@ -1,0 +1,78 @@
+<div class="short-name-card">
+  @if (service.currentUserProfile(); as profile) {
+    <!-- Registered User View -->
+    <div class="registered-profile">
+      <div class="profile-icon">
+        <mat-icon>account_circle</mat-icon>
+      </div>
+      <div class="profile-info">
+        <div class="profile-header">
+          <span class="label">Lunch Reservation Identity</span>
+          <span class="badge verified">
+            <mat-icon>verified</mat-icon> Verified
+          </span>
+        </div>
+        <div class="name-display">
+          <span class="short-name">{{ profile.shortName }}</span>
+        </div>
+        <p class="profile-hint">
+          All your lunch token reservations are securely linked to this name.
+        </p>
+      </div>
+    </div>
+  } @else {
+    <!-- Onboarding Registration View -->
+    <div class="onboarding-profile">
+      <div class="onboarding-header">
+        <div class="icon-wrap">
+          <mat-icon>badge</mat-icon>
+        </div>
+        <div class="header-text">
+          <h3>Set Your Short Name</h3>
+          <p>
+            Please choose a unique Short Name (e.g., your first name or office nickname) to identify your lunch reservations.
+            <strong>This can only be set once and cannot be changed later.</strong>
+          </p>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="input-container" [class.valid]="availabilityStatus() === 'available'" [class.invalid]="availabilityStatus() === 'taken' || availabilityStatus() === 'invalid'">
+          <mat-icon class="input-icon">person</mat-icon>
+          <input
+            type="text"
+            [ngModel]="shortNameInput()"
+            (ngModelChange)="onInputChange($event)"
+            placeholder="Enter unique Short Name (e.g. Tahmid, Rahim)..."
+            maxlength="30"
+            [disabled]="service.submitting()"
+          />
+          @if (checkingAvailability()) {
+            <div class="spinner-small" matTooltip="Checking availability..."></div>
+          } @else if (availabilityStatus() === 'available') {
+            <mat-icon class="status-icon available" matTooltip="Available">check_circle</mat-icon>
+          } @else if (availabilityStatus() === 'taken') {
+            <mat-icon class="status-icon taken" matTooltip="Already taken">cancel</mat-icon>
+          }
+        </div>
+
+        <button
+          mat-flat-button
+          class="register-btn"
+          (click)="onRegister()"
+          [disabled]="service.submitting() || checkingAvailability() || availabilityStatus() !== 'available'"
+        >
+          <mat-icon>save</mat-icon>
+          <span>{{ service.submitting() ? 'Registering...' : 'Register Name' }}</span>
+        </button>
+      </div>
+
+      @if (availabilityMessage()) {
+        <div class="status-msg" [class.available]="availabilityStatus() === 'available'" [class.taken]="availabilityStatus() === 'taken'" [class.invalid]="availabilityStatus() === 'invalid'">
+          <mat-icon>{{ availabilityStatus() === 'available' ? 'info' : 'error_outline' }}</mat-icon>
+          <span>{{ availabilityMessage() }}</span>
+        </div>
+      }
+    </div>
+  }
+</div>
