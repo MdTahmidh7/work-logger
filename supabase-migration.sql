@@ -77,3 +77,70 @@ create policy "Users can update their own attendance"
 create policy "Users can delete their own attendance"
   on attendance for delete
   using (auth.uid() = user_id);
+
+-- =====================================================
+-- Lunch Token Reservation Migration
+-- =====================================================
+
+-- 1. Lunch Token Users Table
+create table if not exists lunch_token_users (
+  id bigserial primary key,
+  user_id uuid references auth.users(id) on delete cascade not null unique,
+  short_name text not null,
+  normalized_short_name text not null unique,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- Indexes for lunch_token_users
+create index if not exists idx_lunch_token_users_normalized on lunch_token_users(normalized_short_name);
+create index if not exists idx_lunch_token_users_user_id on lunch_token_users(user_id);
+
+-- 2. Lunch Token Reservations Table
+create table if not exists lunch_token_reservations (
+  id bigserial primary key,
+  lunch_token_user_id bigint references lunch_token_users(id) on delete cascade not null,
+  reservation_date date not null,
+  token_count integer not null default 1 check (token_count > 0),
+  created_at timestamptz not null default now(),
+  constraint uq_user_reservation_date unique(lunch_token_user_id, reservation_date)
+);
+
+-- Indexes for lunch_token_reservations
+create index if not exists idx_lunch_token_reservations_date on lunch_token_reservations(reservation_date desc);
+create index if not exists idx_lunch_token_reservations_user_id on lunch_token_reservations(lunch_token_user_id);
+
+-- Enable Row Level Security
+alter table lunch_token_users enable row level security;
+alter table lunch_token_reservations enable row level security;
+
+-- Policies for lunch_token_users
+create policy "Authenticated users can view short names"
+  on lunch_token_users for select
+  to authenticated
+  using (true);
+
+create policy "Users can insert their own short name"
+  on lunch_token_users for insert
+  to authenticated
+  with check (auth.uid() = user_id);
+
+-- Policies for lunch_token_reservations
+create policy "Authenticated users can view all reservations"
+  on lunch_token_reservations for select
+  to authenticated
+  using (true);
+
+create policy "Users can insert their own reservations"
+  on lunch_token_reservations for insert
+  to authenticated
+  with check (
+    exists (
+      select 1 from lunch_token_users
+      where lunch_token_users.id = lunch_token_reservations.lunch_token_user_id
+        and lunch_token_users.user_id = auth.uid()
+    )
+  );
+
+-- No update or delete policies created: reservations are strictly permanent and irreversible once submitted.
+
