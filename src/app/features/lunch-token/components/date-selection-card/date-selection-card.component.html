@@ -1,0 +1,110 @@
+<div class="date-selection-card">
+  <div class="card-header">
+    <div class="header-title">
+      <mat-icon>event_available</mat-icon>
+      <h3>Select Working Days</h3>
+    </div>
+    <span class="work-days-hint">Working Days: Sun – Thu</span>
+  </div>
+
+  <!-- Week Switcher Controls -->
+  <div class="week-switcher">
+    <div class="week-tabs">
+      <button
+        type="button"
+        class="week-tab-btn"
+        [class.active]="weekOffset() === 0"
+        (click)="setWeekOffset(0)"
+      >
+        <mat-icon>calendar_today</mat-icon>
+        <span>This Week</span>
+      </button>
+      <button
+        type="button"
+        class="week-tab-btn"
+        [class.active]="weekOffset() === 1"
+        (click)="setWeekOffset(1)"
+      >
+        <mat-icon>update</mat-icon>
+        <span>Next Week</span>
+      </button>
+    </div>
+
+    <div class="week-range-text">
+      <mat-icon>date_range</mat-icon>
+      <span>{{ weekLabel() }}</span>
+    </div>
+
+    <button
+      type="button"
+      mat-stroked-button
+      class="select-all-btn"
+      (click)="onSelectAllWorkingDays()"
+      matTooltip="Select all 5 working days (Sunday – Thursday) for this week"
+    >
+      <mat-icon>done_all</mat-icon>
+      <span>All Working Days</span>
+    </button>
+  </div>
+
+  <!-- 5 Weekday Chips (Sun - Thu) -->
+  <div class="weekday-grid">
+    @for (day of activeWeekDays(); track day.date) {
+      <div
+        class="weekday-chip"
+        [class.selected]="isDaySelected(day.date)"
+        [class.past]="isPastDate(day.date)"
+        (click)="onDayClick(day.date)"
+      >
+        <div class="chip-top">
+          <span class="day-short">{{ day.dayShort }}</span>
+          @if (isDaySelected(day.date)) {
+            <mat-icon class="check-icon">check_circle</mat-icon>
+          }
+        </div>
+        <div class="chip-date">
+          {{ day.date.slice(8) }}
+        </div>
+        <div class="chip-bottom">
+          @if (isPastDate(day.date)) {
+            <span class="subtext">Passed</span>
+          } @else if (day.date === todayStr) {
+            <span class="subtext today">Today</span>
+          } @else {
+            <span class="subtext">{{ day.dayName }}</span>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Custom Specific Date Picker -->
+  <div class="custom-picker-section">
+    <div class="custom-picker-content">
+      <div class="custom-label">
+        <mat-icon>edit_calendar</mat-icon>
+        <span>Looking for another date?</span>
+      </div>
+
+      <div class="picker-wrapper">
+        <input
+          class="hidden-input"
+          [matDatepicker]="picker"
+          [matDatepickerFilter]="dateFilter"
+          [min]="minDate"
+          (dateChange)="onCustomDateSelected($event.value)"
+        />
+        <button
+          type="button"
+          mat-button
+          class="open-picker-btn"
+          (click)="picker.open()"
+        >
+          <mat-icon>calendar_month</mat-icon>
+          <span>Pick Individual Date</span>
+        </button>
+        <mat-datepicker #picker></mat-datepicker>
+      </div>
+    </div>
+  </div>
+</div>
