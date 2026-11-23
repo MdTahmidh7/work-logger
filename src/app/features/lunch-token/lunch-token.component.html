@@ -1,0 +1,48 @@
+<div class="lunch-token-page">
+  <div class="page-container">
+    <!-- Page Header -->
+    <header class="page-header">
+      <div class="header-content">
+        <div class="title-with-icon">
+          <div class="header-icon-badge">
+            <mat-icon>lunch_dining</mat-icon>
+          </div>
+          <div>
+            <h1 class="page-title">Lunch Token Reservation</h1>
+            <p class="page-subtitle">Reserve daily lunch tokens for office working days (Sunday – Thursday)</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    @if (service.loading()) {
+      <div class="loading-container">
+        <div class="page-spinner"></div>
+        <span>Loading lunch token profile...</span>
+      </div>
+    } @else {
+      <!-- Section 1: User Short Name Identity -->
+      <section class="identity-section">
+        <app-short-name-card />
+      </section>
+
+      <!-- Section 2: Reservation Workflow (Grid) -->
+      <section class="reservation-grid">
+        <div class="left-panel">
+          <!-- Date / Weekday Selector -->
+          <app-date-selection-card />
+
+          <!-- Selected Tokens Counter Table -->
+          <app-token-counter-card />
+        </div>
+
+        <div class="right-panel">
+          <!-- Summary & Confirmation Sidebar -->
+          <div class="sticky-sidebar">
+            <app-reservation-summary-card />
+          </div>
+        </div>
+      </section>
+    }
+  </div>
+</div>
