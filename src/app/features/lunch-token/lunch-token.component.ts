@@ -6,6 +6,7 @@ import { ShortNameCardComponent } from './components/short-name-card/short-name-
 import { DateSelectionCardComponent } from './components/date-selection-card/date-selection-card.component';
 import { TokenCounterCardComponent } from './components/token-counter-card/token-counter-card.component';
 import { ReservationSummaryCardComponent } from './components/reservation-summary-card/reservation-summary-card.component';
+import { PendingPaymentCardComponent } from './components/pending-payment-card/pending-payment-card.component';
 import { LunchTokenService } from './services/lunch-token.service';
 
 @Component({
@@ -16,6 +17,7 @@ import { LunchTokenService } from './services/lunch-token.service';
     RouterModule,
     MatIconModule,
     ShortNameCardComponent,
+    PendingPaymentCardComponent,
     DateSelectionCardComponent,
     TokenCounterCardComponent,
     ReservationSummaryCardComponent,

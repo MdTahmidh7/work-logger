@@ -43,6 +43,7 @@ export class LunchTokenRepository {
       lunchTokenUserId: row.lunch_token_user_id,
       reservationDate: row.reservation_date,
       tokenCount: row.token_count,
+      paymentStatus: (row.payment_status as 'pending' | 'paid') || 'pending',
       createdAt: row.created_at,
       shortName: shortNameVal || undefined,
     };
@@ -133,6 +134,7 @@ export class LunchTokenRepository {
       lunch_token_user_id: lunchTokenUserId,
       reservation_date: r.date,
       token_count: r.count,
+      payment_status: 'pending',
       created_at: new Date().toISOString(),
     }));
 
@@ -155,7 +157,7 @@ export class LunchTokenRepository {
 
     let query = this.supabase.supabase
       .from(this.RESERVATIONS_TABLE)
-      .select('id, lunch_token_user_id, reservation_date, token_count, created_at, lunch_token_users!inner(short_name, normalized_short_name)');
+      .select('id, lunch_token_user_id, reservation_date, token_count, payment_status, created_at, lunch_token_users!inner(short_name, normalized_short_name)');
 
     if (startDate) {
       query = query.gte('reservation_date', startDate);
@@ -174,7 +176,7 @@ export class LunchTokenRepository {
     const rawRows = data || [];
 
     // Group rows by reservation_date into a Map so each day is exactly 1 row
-    const dateMap = new Map<string, { date: string; users: { shortName: string; tokenCount: number }[]; totalTokens: number }>();
+    const dateMap = new Map<string, { date: string; users: { shortName: string; tokenCount: number; paymentStatus: 'pending' | 'paid' }[]; totalTokens: number }>();
 
     for (const row of (rawRows as any[])) {
       const dateStr = row.reservation_date;
@@ -183,6 +185,7 @@ export class LunchTokenRepository {
         ? userJoin[0]?.short_name || 'Unknown'
         : userJoin?.short_name || 'Unknown';
       const tokenCountVal = row.token_count || 1;
+      const paymentStatusVal = (row.payment_status as 'pending' | 'paid') || 'pending';
 
       let group = dateMap.get(dateStr);
       if (!group) {
@@ -197,6 +200,7 @@ export class LunchTokenRepository {
       group.users.push({
         shortName: shortNameVal,
         tokenCount: tokenCountVal,
+        paymentStatus: paymentStatusVal,
       });
       group.totalTokens += tokenCountVal;
     }
@@ -233,5 +237,28 @@ export class LunchTokenRepository {
       totalPages,
       currentPage: page,
     };
+  }
+
+  async getPendingReservations(lunchTokenUserId: number): Promise<LunchTokenReservation[]> {
+    const { data, error } = await this.supabase.supabase
+      .from(this.RESERVATIONS_TABLE)
+      .select('*')
+      .eq('lunch_token_user_id', lunchTokenUserId)
+      .eq('payment_status', 'pending')
+      .order('reservation_date', { ascending: true });
+
+    if (error) throw error;
+    return (data || []).map((row: any) => this.mapReservationRow(row));
+  }
+
+  async markReservationsAsPaid(reservationIds: number[]): Promise<void> {
+    if (!reservationIds || reservationIds.length === 0) return;
+
+    const { error } = await this.supabase.supabase
+      .from(this.RESERVATIONS_TABLE)
+      .update({ payment_status: 'paid' })
+      .in('id', reservationIds);
+
+    if (error) throw error;
   }
 }

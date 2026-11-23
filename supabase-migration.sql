@@ -100,6 +100,7 @@ create table if not exists lunch_token_reservations (
   lunch_token_user_id bigint references lunch_token_users(id) on delete cascade not null,
   reservation_date date not null,
   token_count integer not null default 1 check (token_count > 0),
+  payment_status text not null default 'pending' check (payment_status in ('pending', 'paid')),
   created_at timestamptz not null default now(),
   constraint uq_user_reservation_date unique(lunch_token_user_id, reservation_date),
   constraint ck_working_day check (extract(dow from reservation_date) between 0 and 4)
@@ -108,6 +109,7 @@ create table if not exists lunch_token_reservations (
 -- Indexes for lunch_token_reservations
 create index if not exists idx_lunch_token_reservations_date on lunch_token_reservations(reservation_date desc);
 create index if not exists idx_lunch_token_reservations_user_id on lunch_token_reservations(lunch_token_user_id);
+create index if not exists idx_lunch_token_reservations_payment on lunch_token_reservations(payment_status);
 
 -- Enable Row Level Security
 alter table lunch_token_users enable row level security;
@@ -141,5 +143,27 @@ create policy "Users can insert their own reservations"
     )
   );
 
--- No update or delete policies created: reservations are strictly permanent and irreversible once submitted.
+create policy "Users can update payment status of their own reservations"
+  on lunch_token_reservations for update
+  to authenticated
+  using (
+    exists (
+      select 1 from lunch_token_users
+      where lunch_token_users.id = lunch_token_reservations.lunch_token_user_id
+        and lunch_token_users.user_id = auth.uid()
+    )
+  )
+  with check (
+    exists (
+      select 1 from lunch_token_users
+      where lunch_token_users.id = lunch_token_reservations.lunch_token_user_id
+        and lunch_token_users.user_id = auth.uid()
+    )
+  );
+
+-- Migration commands for existing databases:
+-- ALTER TABLE lunch_token_reservations ADD COLUMN IF NOT EXISTS payment_status text not null default 'pending' check (payment_status in ('pending', 'paid'));
+-- CREATE INDEX IF NOT EXISTS idx_lunch_token_reservations_payment ON lunch_token_reservations(payment_status);
+-- CREATE POLICY "Users can update payment status of their own reservations" ON lunch_token_reservations FOR UPDATE TO authenticated USING (EXISTS (SELECT 1 FROM lunch_token_users WHERE lunch_token_users.id = lunch_token_reservations.lunch_token_user_id AND lunch_token_users.user_id = auth.uid())) WITH CHECK (EXISTS (SELECT 1 FROM lunch_token_users WHERE lunch_token_users.id = lunch_token_reservations.lunch_token_user_id AND lunch_token_users.user_id = auth.uid()));
+
 

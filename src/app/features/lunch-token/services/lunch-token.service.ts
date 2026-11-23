@@ -2,6 +2,7 @@ import { Injectable, inject, signal, computed } from '@angular/core';
 import { LunchTokenRepository } from '../../../core/repositories/lunch-token.repository';
 import {
   LunchTokenUser,
+  LunchTokenReservation,
   SelectedDateToken,
   LunchTokenHistoryFilter,
   LunchTokenHistoryResult,
@@ -19,6 +20,11 @@ export class LunchTokenService {
   loading = signal<boolean>(false);
   submitting = signal<boolean>(false);
 
+  // Pending payments tracking
+  pendingReservations = signal<LunchTokenReservation[]>([]);
+  loadingPending = signal<boolean>(false);
+  updatingPayment = signal<boolean>(false);
+
   // Computes the total tokens for new/unreserved items ready for submission
   totalTokens = computed(() => {
     return this.selectedDateTokens()
@@ -31,11 +37,23 @@ export class LunchTokenService {
     return this.selectedDateTokens().filter((item) => !item.alreadyReserved).length;
   });
 
+  // Computes pending tokens and total due in TK (60 TK per token)
+  pendingTotalTokens = computed(() => {
+    return this.pendingReservations().reduce((sum, item) => sum + item.tokenCount, 0);
+  });
+
+  pendingTotalDue = computed(() => {
+    return this.pendingTotalTokens() * 60;
+  });
+
   async loadUserProfile(): Promise<LunchTokenUser | null> {
     this.loading.set(true);
     try {
       const profile = await this.repo.getUserProfile();
       this.currentUserProfile.set(profile);
+      if (profile) {
+        await this.loadPendingReservations();
+      }
       return profile;
     } catch (error) {
       this.notify.error('Failed to load Lunch Token profile');
@@ -294,6 +312,8 @@ export class LunchTokenService {
 
       // Clear selection upon successful reservation
       this.clearSelection();
+      // Reload pending reservations
+      await this.loadPendingReservations();
       return true;
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Failed to submit reservations';
@@ -301,6 +321,42 @@ export class LunchTokenService {
       return false;
     } finally {
       this.submitting.set(false);
+    }
+  }
+
+  async loadPendingReservations(): Promise<LunchTokenReservation[]> {
+    const profile = this.currentUserProfile();
+    if (!profile) {
+      this.pendingReservations.set([]);
+      return [];
+    }
+    this.loadingPending.set(true);
+    try {
+      const list = await this.repo.getPendingReservations(profile.id);
+      this.pendingReservations.set(list);
+      return list;
+    } catch (error) {
+      console.error('Failed to load pending lunch token reservations', error);
+      return [];
+    } finally {
+      this.loadingPending.set(false);
+    }
+  }
+
+  async markReservationsAsPaid(reservationIds: number[]): Promise<boolean> {
+    if (this.updatingPayment() || reservationIds.length === 0) return false;
+    this.updatingPayment.set(true);
+    try {
+      await this.repo.markReservationsAsPaid(reservationIds);
+      this.notify.success('Payment status marked as paid successfully!');
+      await this.loadPendingReservations();
+      return true;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Failed to update payment status';
+      this.notify.error(msg);
+      return false;
+    } finally {
+      this.updatingPayment.set(false);
     }
   }
 

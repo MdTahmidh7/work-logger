@@ -6,6 +6,7 @@ export interface ConfirmOptions {
   message: string;
   confirmText?: string;
   confirmColor?: string;
+  cancelButtonText?: string;
   icon?: 'warning' | 'question' | 'info' | 'error';
 }
 
@@ -36,7 +37,7 @@ export class ConfirmDialogService {
       confirmButtonColor: options.confirmColor || '#6750a4',
       cancelButtonColor: '#6b7280',
       confirmButtonText: options.confirmText || 'Confirm',
-      cancelButtonText: 'Cancel',
+      cancelButtonText: options.cancelButtonText || 'Cancel',
       customClass: { popup: 'swal2-confirm' },
       reverseButtons: true,
     });
