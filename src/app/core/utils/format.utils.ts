@@ -67,3 +67,13 @@ export function calculateWorkingMinutes(punchIn: string, punchOut: string): numb
   const totalMinutes = (outH * 60 + outM) - (inH * 60 + inM);
   return Math.max(0, totalMinutes);
 }
+
+export function escapeHtml(str: string): string {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}

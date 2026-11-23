@@ -1,0 +1,285 @@
+.date-selection-card {
+  background: var(--pwl-surface);
+  border: 1px solid var(--pwl-divider);
+  border-radius: var(--pwl-radius-md, 12px);
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+
+  .header-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    mat-icon {
+      color: var(--pwl-primary);
+      font-size: 22px;
+      width: 22px;
+      height: 22px;
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--pwl-text-primary);
+    }
+  }
+
+  .work-days-hint {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--pwl-text-secondary);
+    background: var(--pwl-surface-variant);
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+  }
+}
+
+/* Week Switcher */
+.week-switcher {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+
+  .week-tabs {
+    display: inline-flex;
+    background: var(--pwl-surface-variant);
+    padding: 0.25rem;
+    border-radius: 8px;
+    gap: 0.25rem;
+
+    .week-tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      border: none;
+      background: transparent;
+      padding: 0.4rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--pwl-text-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      mat-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+      }
+
+      &.active {
+        background: var(--pwl-surface);
+        color: var(--pwl-primary);
+        font-weight: 600;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+      }
+
+      &:hover:not(.active) {
+        color: var(--pwl-text-primary);
+      }
+    }
+  }
+
+  .week-range-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--pwl-text-secondary);
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  .select-all-btn {
+    border-color: var(--pwl-primary);
+    color: var(--pwl-primary);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    border-radius: 6px;
+    height: 36px;
+    padding: 0 0.875rem;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      margin-right: 0.25rem;
+    }
+
+    &:hover {
+      background: var(--pwl-primary-light);
+    }
+  }
+}
+
+/* Weekday Grid */
+.weekday-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+
+  @media (max-width: 640px) {
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  }
+}
+
+.weekday-chip {
+  background: var(--pwl-surface-variant);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  padding: 0.75rem 0.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  user-select: none;
+
+  .chip-top {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    width: 100%;
+
+    .day-short {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--pwl-text-secondary);
+    }
+
+    .check-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+      color: var(--pwl-primary);
+    }
+  }
+
+  .chip-date {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--pwl-text-primary);
+    margin: 0.25rem 0;
+  }
+
+  .chip-bottom {
+    font-size: 0.6875rem;
+    color: var(--pwl-text-tertiary);
+
+    .subtext.today {
+      color: #0d9488;
+      font-weight: 600;
+    }
+  }
+
+  &:hover:not(.past) {
+    transform: translateY(-2px);
+    border-color: rgba(103, 80, 164, 0.3);
+  }
+
+  &.selected {
+    background: var(--pwl-primary-light);
+    border-color: var(--pwl-primary);
+
+    .chip-top .day-short {
+      color: var(--pwl-primary);
+      font-weight: 700;
+    }
+
+    .chip-date {
+      color: var(--pwl-primary);
+    }
+  }
+
+  &.past {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background: transparent;
+    border-color: var(--pwl-divider);
+
+    &:hover {
+      transform: none;
+    }
+  }
+}
+
+/* Custom Date Picker Section */
+.custom-picker-section {
+  border-top: 1px dashed var(--pwl-divider);
+  padding-top: 1rem;
+
+  .custom-picker-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+
+    .custom-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      color: var(--pwl-text-secondary);
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+        color: var(--pwl-text-tertiary);
+      }
+    }
+
+    .picker-wrapper {
+      position: relative;
+
+      .hidden-input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+        width: 0;
+        height: 0;
+      }
+
+      .open-picker-btn {
+        color: var(--pwl-primary);
+        font-weight: 600;
+        font-size: 0.8125rem;
+        border-radius: 6px;
+
+        mat-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+          margin-right: 0.375rem;
+        }
+
+        &:hover {
+          background: var(--pwl-primary-light);
+        }
+      }
+    }
+  }
+}
