@@ -28,3 +28,6 @@ export class LunchTokenComponent implements OnInit {
     await this.service.loadUserProfile();
   }
 }
+
+export default LunchTokenComponent;
+

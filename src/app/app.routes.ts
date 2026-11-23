@@ -54,7 +54,7 @@ export const routes: Routes = [
   },
   {
     path: 'lunch-token',
-    loadComponent: () => import('./features/lunch-token/lunch-token.component').then(m => m.LunchTokenComponent),
+    loadComponent: () => import('./features/lunch-token/lunch-token.component').then(m => m.default || m.LunchTokenComponent),
     canActivate: [authGuard],
   },
   {
