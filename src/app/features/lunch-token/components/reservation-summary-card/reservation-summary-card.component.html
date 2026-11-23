@@ -64,13 +64,15 @@
       (click)="onSubmit()"
       [disabled]="service.submitting() || service.activeReservationsCount() === 0"
     >
-      @if (service.submitting()) {
-        <div class="spinner-inline"></div>
-        <span>Submitting Reservation...</span>
-      } @else {
-        <mat-icon>send</mat-icon>
-        <span>Submit Reservation</span>
-      }
+      <span class="btn-content">
+        @if (service.submitting()) {
+          <div class="spinner-inline"></div>
+          <span>Submitting Reservation...</span>
+        } @else {
+          <mat-icon>send</mat-icon>
+          <span>Submit Reservation</span>
+        }
+      </span>
     </button>
   </div>
 </div>

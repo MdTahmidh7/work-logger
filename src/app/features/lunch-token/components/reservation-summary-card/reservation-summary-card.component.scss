@@ -196,9 +196,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
   box-shadow: 0 2px 4px rgba(13, 148, 136, 0.25);
   transition: all 0.2s ease;
+
+  .btn-content {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
 
   mat-icon {
     font-size: 20px;
