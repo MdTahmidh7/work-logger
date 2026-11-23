@@ -1,0 +1,120 @@
+<div class="pending-payment-card">
+  <div class="card-header">
+    <div class="header-title">
+      <div class="icon-wrap">
+        <mat-icon>payments</mat-icon>
+      </div>
+      <div>
+        <h3>Pending Token Payments</h3>
+        <p class="subtitle">Manual payment settlement for your reserved lunch tokens</p>
+      </div>
+    </div>
+
+    @if (pendingList().length > 0) {
+      <div class="due-summary-badge" [matTooltip]="'Total due for ' + service.pendingTotalTokens() + ' reserved token(s)'">
+        <span class="badge-label">Total Due:</span>
+        <span class="badge-amount">{{ service.pendingTotalDue() }} TK</span>
+        <span class="badge-count">({{ service.pendingTotalTokens() }} token{{ service.pendingTotalTokens() === 1 ? '' : 's' }})</span>
+      </div>
+    }
+  </div>
+
+  @if (service.loadingPending()) {
+    <div class="loading-state">
+      <div class="spinner-small"></div>
+      <span>Loading payment dues...</span>
+    </div>
+  } @else if (pendingList().length === 0) {
+    <div class="settled-state">
+      <mat-icon class="settled-icon">check_circle</mat-icon>
+      <div class="settled-text">
+        <span class="settled-title">All Payments Up to Date</span>
+        <span class="settled-subtitle">You have no pending dues for lunch tokens.</span>
+      </div>
+    </div>
+  } @else {
+    <!-- Compact Control Bar -->
+    <div class="compact-control-bar">
+      <div class="control-left">
+        <mat-checkbox
+          [checked]="allSelected()"
+          [indeterminate]="someSelected()"
+          (change)="toggleSelectAll($event.checked)"
+          color="primary"
+          class="compact-checkbox"
+        >
+          <span class="select-label">Select All</span>
+        </mat-checkbox>
+
+        @if (selectedReservationIds().length > 0) {
+          <span class="selected-badge">
+            {{ selectedTokensCount() }} token{{ selectedTokensCount() === 1 ? '' : 's' }} • {{ selectedTotalAmount() }} TK
+          </span>
+        }
+      </div>
+
+      <div class="control-right">
+        <button
+          type="button"
+          mat-flat-button
+          class="compact-pay-btn"
+          [disabled]="selectedReservationIds().length === 0 || service.updatingPayment()"
+          (click)="onConfirmPayment()"
+        >
+          <span class="btn-content">
+            @if (service.updatingPayment()) {
+              <span class="btn-spinner"></span>
+              <span>Updating...</span>
+            } @else {
+              <mat-icon>verified</mat-icon>
+              <span>
+                @if (selectedReservationIds().length > 0) {
+                  Pay {{ selectedTotalAmount() }} TK
+                } @else {
+                  Mark as Paid
+                }
+              </span>
+            }
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Compact Pending Grid (Fits 5 days across) -->
+    <div class="pending-items-grid">
+      @for (item of pendingList(); track item.id) {
+        <div
+          class="pending-item"
+          [class.item-selected]="isSelected(item.id)"
+          (click)="toggleItemSelection(item.id)"
+        >
+          <!-- Top Row: Checkbox on left, Date in center, Token count in top-right -->
+          <div class="item-top-row">
+            <div class="item-checkbox" (click)="$event.stopPropagation()">
+              <mat-checkbox
+                [checked]="isSelected(item.id)"
+                (change)="toggleItemSelection(item.id)"
+                color="primary"
+              ></mat-checkbox>
+            </div>
+
+            <div class="item-date-center">
+              <span class="date-text">{{ formatDate(item.reservationDate) }}</span>
+            </div>
+
+            <div class="token-top-badge" [matTooltip]="item.tokenCount + ' token' + (item.tokenCount === 1 ? '' : 's')">
+              <mat-icon>confirmation_number</mat-icon>
+              <span>{{ item.tokenCount }} {{ item.tokenCount === 1 ? 'Token' : 'Tokens' }}</span>
+            </div>
+          </div>
+
+          <!-- Bottom: Cost and Due badge -->
+          <div class="item-bottom-row">
+            <span class="cost-amount">{{ item.tokenCount * 60 }} TK</span>
+            <span class="due-badge">Due</span>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

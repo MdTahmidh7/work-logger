@@ -35,6 +35,14 @@
       </div>
     </div>
 
+    <!-- Estimated Due Row -->
+    <div class="summary-row">
+      <span class="row-label">Due Upon Reservation</span>
+      <span class="row-value">
+        {{ service.totalTokens() * 60 }} TK <span style="font-size: 0.75rem; color: var(--pwl-text-secondary); font-weight: normal;">(60 TK / token)</span>
+      </span>
+    </div>
+
     <!-- Breakdown of Selected Dates -->
     @if (service.selectedDateTokens().length > 0) {
       <div class="dates-breakdown">

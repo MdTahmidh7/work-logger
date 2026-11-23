@@ -265,8 +265,22 @@
     border-bottom: none;
   }
 
-  tr:hover {
-    background: rgba(13, 148, 136, 0.02);
+  tr {
+    transition: background-color 0.15s ease;
+
+    /* Alternating week grouping background */
+    &.week-alt-row {
+      background: rgba(13, 148, 136, 0.04);
+    }
+
+    /* Distinct top border at week boundaries */
+    &.week-boundary-row td {
+      border-top: 2px solid rgba(13, 148, 136, 0.25);
+    }
+
+    &:hover {
+      background: rgba(13, 148, 136, 0.08);
+    }
   }
 
   .col-date {
@@ -302,16 +316,17 @@
       border-radius: 999px;
       transition: all 0.15s ease;
 
+      /* Default / Pending (due) state: eye-soothing yellowish / amber tone */
       &:hover {
-        border-color: #0d9488;
-        background: rgba(13, 148, 136, 0.08);
+        border-color: #d97706;
+        background: rgba(217, 119, 6, 0.08);
       }
 
       .user-avatar-icon {
         font-size: 16px;
         width: 16px;
         height: 16px;
-        color: #0d9488;
+        color: #d97706;
       }
 
       .short-name {
@@ -324,7 +339,7 @@
         display: inline-flex;
         align-items: center;
         gap: 0.2rem;
-        background: #0d9488;
+        background: #d97706;
         color: #ffffff;
         font-size: 0.75rem;
         font-weight: 700;
@@ -340,6 +355,22 @@
           font-size: 0.6875rem;
           opacity: 0.9;
           font-weight: 500;
+        }
+      }
+
+      /* Paid state: eye-soothing greenish / teal tone */
+      &.paid {
+        &:hover {
+          border-color: #0d9488;
+          background: rgba(13, 148, 136, 0.08);
+        }
+
+        .user-avatar-icon {
+          color: #0d9488;
+        }
+
+        .count-pill {
+          background: #0d9488;
         }
       }
     }

@@ -12,6 +12,7 @@ export interface LunchTokenReservation {
   lunchTokenUserId: number;
   reservationDate: string; // 'yyyy-MM-dd'
   tokenCount: number;
+  paymentStatus?: 'pending' | 'paid';
   createdAt?: string;
   shortName?: string;
 }
@@ -27,6 +28,7 @@ export interface SelectedDateToken {
 export interface DailyReservedUser {
   shortName: string;
   tokenCount: number;
+  paymentStatus: 'pending' | 'paid';
 }
 
 export interface LunchTokenDailyHistoryItem {

@@ -8,7 +8,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { LunchTokenService } from '../services/lunch-token.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { LunchTokenDailyHistoryItem, LunchTokenHistoryFilter } from '../../../core/models/lunch-token.model';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, startOfWeek, differenceInCalendarWeeks } from 'date-fns';
 
 @Component({
   standalone: true,
@@ -117,6 +117,35 @@ export class LunchTokenHistoryComponent implements OnInit {
     const d = parseISO(dateStr);
     const day = d.getDay();
     return day === 5 || day === 6;
+  }
+
+  getWeekStartStr(dateStr: string): string {
+    try {
+      const d = parseISO(dateStr);
+      const sunday = startOfWeek(d, { weekStartsOn: 0 });
+      return format(sunday, 'yyyy-MM-dd');
+    } catch {
+      return dateStr;
+    }
+  }
+
+  isAlternatingWeek(dateStr: string): boolean {
+    try {
+      const d = parseISO(dateStr);
+      const sunday = startOfWeek(d, { weekStartsOn: 0 });
+      // Anchor base to fixed Sunday (Jan 4, 2026) to alternate week bands cleanly
+      const weeks = differenceInCalendarWeeks(sunday, new Date(2026, 0, 4), { weekStartsOn: 0 });
+      return Math.abs(weeks) % 2 === 1;
+    } catch {
+      return false;
+    }
+  }
+
+  isWeekBoundary(index: number): boolean {
+    if (index === 0) return false;
+    const items = this.records();
+    if (!items[index - 1] || !items[index]) return false;
+    return this.getWeekStartStr(items[index - 1].reservationDate) !== this.getWeekStartStr(items[index].reservationDate);
   }
 }
 

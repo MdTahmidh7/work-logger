@@ -131,8 +131,12 @@
               </tr>
             </thead>
             <tbody>
-              @for (item of records(); track item.reservationDate) {
-                <tr [class.weekend-row]="isFridayOrSaturday(item.reservationDate)">
+              @for (item of records(); track item.reservationDate; let idx = $index) {
+                <tr
+                  [class.weekend-row]="isFridayOrSaturday(item.reservationDate)"
+                  [class.week-alt-row]="isAlternatingWeek(item.reservationDate)"
+                  [class.week-boundary-row]="isWeekBoundary(idx)"
+                >
                   <!-- Date Column -->
                   <td class="col-date">
                     <span class="date-badge">
@@ -149,10 +153,17 @@
                   <td class="col-user">
                     <div class="users-chips-container">
                       @for (user of item.users; track user.shortName) {
-                        <div class="user-token-chip">
+                        <div
+                          class="user-token-chip"
+                          [class.paid]="user.paymentStatus === 'paid'"
+                          [class.pending]="user.paymentStatus !== 'paid'"
+                        >
                           <mat-icon class="user-avatar-icon">person</mat-icon>
                           <span class="short-name">{{ user.shortName }}</span>
-                          <span class="count-pill" [matTooltip]="user.shortName + ' reserved ' + user.tokenCount + ' token' + (user.tokenCount === 1 ? '' : 's')">
+                          <span
+                            class="count-pill"
+                            [matTooltip]="user.shortName + ' reserved ' + user.tokenCount + ' token' + (user.tokenCount === 1 ? '' : 's') + ' (' + (user.paymentStatus === 'paid' ? 'Paid' : 'Payment Due') + ')'"
+                          >
                             <span class="count-num">{{ user.tokenCount }}</span>
                             <span class="count-label">token{{ user.tokenCount === 1 ? '' : 's' }}</span>
                           </span>

@@ -31,7 +31,14 @@
         <app-short-name-card />
       </section>
 
-      <!-- Section 2: Reservation Workflow (Grid) -->
+      <!-- Section 2: Pending Payments Section (Due) -->
+      @if (service.currentUserProfile()) {
+        <section class="pending-payment-section">
+          <app-pending-payment-card />
+        </section>
+      }
+
+      <!-- Section 3: Reservation Workflow (Grid) -->
       <section class="reservation-grid">
         <div class="left-panel">
           <!-- Date / Weekday Selector -->
