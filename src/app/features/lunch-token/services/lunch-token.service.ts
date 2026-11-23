@@ -2,7 +2,7 @@ import { Injectable, inject, signal, computed } from '@angular/core';
 import { LunchTokenRepository } from '../../../core/repositories/lunch-token.repository';
 import { LunchTokenUser, SelectedDateToken } from '../../../core/models/lunch-token.model';
 import { NotificationService } from '../../../core/services/notification.service';
-import { format, parseISO, startOfWeek, addDays, isBefore, startOfDay } from 'date-fns';
+import { format, parseISO, startOfWeek, addDays } from 'date-fns';
 
 @Injectable({ providedIn: 'root' })
 export class LunchTokenService {
@@ -47,6 +47,7 @@ export class LunchTokenService {
   }
 
   async registerShortName(shortName: string): Promise<LunchTokenUser> {
+    if (this.submitting()) throw new Error('Registration in progress');
     this.submitting.set(true);
     try {
       const profile = await this.repo.registerShortName(shortName);
@@ -70,7 +71,7 @@ export class LunchTokenService {
     const d = typeof date === 'string' ? parseISO(date) : date;
     const day = d.getDay();
     // Sunday (0) through Thursday (4) are working days. Friday (5) and Saturday (6) are weekends.
-    return day !== 5 && day !== 6;
+    return !isNaN(day) && day >= 0 && day <= 4;
   }
 
   getDayName(dateStr: string): string {
@@ -100,15 +101,19 @@ export class LunchTokenService {
     return days;
   }
 
-  async refreshReservationStatus(dates: string[]): Promise<Set<string>> {
+  async refreshReservationStatus(dates: string[]): Promise<Map<string, number>> {
     const profile = this.currentUserProfile();
-    if (!profile || dates.length === 0) return new Set();
+    const map = new Map<string, number>();
+    if (!profile || dates.length === 0) return map;
 
     try {
       const existing = await this.repo.getExistingReservations(profile.id, dates);
-      return new Set(existing.map((r) => r.reservationDate));
+      for (const r of existing) {
+        map.set(r.reservationDate, r.tokenCount);
+      }
+      return map;
     } catch {
-      return new Set();
+      return map;
     }
   }
 
@@ -124,34 +129,39 @@ export class LunchTokenService {
       return;
     }
 
-    const current = [...this.selectedDateTokens()];
-    const index = current.findIndex((item) => item.date === dateStr);
+    // Check if already selected
+    const existingIndex = this.selectedDateTokens().findIndex((item) => item.date === dateStr);
+    if (existingIndex >= 0) {
+      // Remove
+      this.selectedDateTokens.update((list) => list.filter((item) => item.date !== dateStr));
+      return;
+    }
 
-    if (index >= 0) {
-      // Remove from selection
-      current.splice(index, 1);
-      this.selectedDateTokens.set(current);
-    } else {
-      // Add to selection
-      const reservedSet = await this.refreshReservationStatus([dateStr]);
-      const isReserved = reservedSet.has(dateStr);
+    // Fetch existing reservation for this date
+    const reservedMap = await this.refreshReservationStatus([dateStr]);
+    const isReserved = reservedMap.has(dateStr);
+    const reservedTokens = reservedMap.get(dateStr) ?? 1;
 
-      const newItem: SelectedDateToken = {
-        date: dateStr,
-        dayName: this.getDayName(dateStr),
-        dayShort: this.getDayShort(dateStr),
-        count: 1,
-        alreadyReserved: isReserved,
-      };
+    const newItem: SelectedDateToken = {
+      date: dateStr,
+      dayName: this.getDayName(dateStr),
+      dayShort: this.getDayShort(dateStr),
+      count: reservedTokens,
+      alreadyReserved: isReserved,
+    };
 
-      current.push(newItem);
-      // Sort chronologically
-      current.sort((a, b) => a.date.localeCompare(b.date));
-      this.selectedDateTokens.set(current);
-
-      if (isReserved) {
-        this.notify.info(`You have already reserved lunch for ${format(parseISO(dateStr), 'MMM d, yyyy')}.`);
+    // Update atomically, avoiding duplicate insertion if race occurs
+    this.selectedDateTokens.update((current) => {
+      if (current.some((it) => it.date === dateStr)) {
+        return current;
       }
+      const updated = [...current, newItem];
+      updated.sort((a, b) => a.date.localeCompare(b.date));
+      return updated;
+    });
+
+    if (isReserved) {
+      this.notify.info(`You have already reserved ${reservedTokens} lunch token(s) for ${format(parseISO(dateStr), 'MMM d, yyyy')}.`);
     }
   }
 
@@ -168,12 +178,12 @@ export class LunchTokenService {
     }
 
     const dates = validDays.map((d) => d.date);
-    const reservedSet = await this.refreshReservationStatus(dates);
+    const reservedMap = await this.refreshReservationStatus(dates);
 
     const merged = validDays.map((d) => ({
       ...d,
-      count: 1,
-      alreadyReserved: reservedSet.has(d.date),
+      count: reservedMap.get(d.date) ?? 1,
+      alreadyReserved: reservedMap.has(d.date),
     }));
 
     // Replace current selection with this week's working days
@@ -215,6 +225,8 @@ export class LunchTokenService {
   }
 
   async submitReservations(): Promise<boolean> {
+    if (this.submitting()) return false;
+
     const profile = this.currentUserProfile();
     if (!profile) {
       this.notify.error('Please register your Short Name before making reservations.');
@@ -238,11 +250,13 @@ export class LunchTokenService {
         this.notify.error(`Date ${item.date} is in the past.`);
         return false;
       }
-      if (item.count < 1) {
-        this.notify.error(`Invalid token count for ${item.date}. Minimum is 1.`);
+      if (!Number.isInteger(item.count) || item.count < 1) {
+        this.notify.error(`Invalid token count for ${item.date}. Must be a positive integer.`);
         return false;
       }
     }
+
+    const totalToSubmit = itemsToSubmit.reduce((sum, item) => sum + item.count, 0);
 
     this.submitting.set(true);
     try {
@@ -253,9 +267,13 @@ export class LunchTokenService {
         const conflictDates = existing.map((e) => e.reservationDate).join(', ');
         this.notify.error(`Reservations already exist for: ${conflictDates}. Please refresh your selection.`);
         // Mark them as reserved
-        const conflictSet = new Set(existing.map((e) => e.reservationDate));
+        const conflictMap = new Map(existing.map((e) => [e.reservationDate, e.tokenCount]));
         this.selectedDateTokens.update((items) =>
-          items.map((it) => (conflictSet.has(it.date) ? { ...it, alreadyReserved: true } : it))
+          items.map((it) =>
+            conflictMap.has(it.date)
+              ? { ...it, alreadyReserved: true, count: conflictMap.get(it.date)! }
+              : it
+          )
         );
         return false;
       }
@@ -266,7 +284,7 @@ export class LunchTokenService {
       );
 
       this.notify.success(
-        `Successfully reserved ${this.totalTokens()} lunch token(s) across ${itemsToSubmit.length} day(s)!`
+        `Successfully reserved ${totalToSubmit} lunch token(s) across ${itemsToSubmit.length} day(s)!`
       );
 
       // Clear selection upon successful reservation
@@ -281,3 +299,4 @@ export class LunchTokenService {
     }
   }
 }
+

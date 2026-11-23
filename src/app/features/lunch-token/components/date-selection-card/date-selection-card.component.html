@@ -50,10 +50,12 @@
   <!-- 5 Weekday Chips (Sun - Thu) -->
   <div class="weekday-grid">
     @for (day of activeWeekDays(); track day.date) {
-      <div
+      <button
+        type="button"
         class="weekday-chip"
         [class.selected]="isDaySelected(day.date)"
         [class.past]="isPastDate(day.date)"
+        [disabled]="isPastDate(day.date)"
         (click)="onDayClick(day.date)"
       >
         <div class="chip-top">
@@ -74,7 +76,7 @@
             <span class="subtext">{{ day.dayName }}</span>
           }
         </div>
-      </div>
+      </button>
     }
   </div>
 
@@ -88,11 +90,12 @@
 
       <div class="picker-wrapper">
         <input
+          #pickerInput
           class="hidden-input"
           [matDatepicker]="picker"
           [matDatepickerFilter]="dateFilter"
           [min]="minDate"
-          (dateChange)="onCustomDateSelected($event.value)"
+          (dateChange)="onCustomDateSelected($event.value, pickerInput)"
         />
         <button
           type="button"

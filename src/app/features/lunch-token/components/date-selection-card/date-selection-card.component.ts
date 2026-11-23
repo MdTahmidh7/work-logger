@@ -78,9 +78,15 @@ export class DateSelectionCardComponent {
     this.service.selectAllWorkingDays(this.activeWeekReference());
   }
 
-  onCustomDateSelected(date: Date | null): void {
+  onCustomDateSelected(date: Date | null, inputEl?: HTMLInputElement): void {
     if (!date) return;
     const dateStr = format(date, 'yyyy-MM-dd');
+    if (inputEl) {
+      inputEl.value = '';
+    }
+    if (this.selectedDateSet().has(dateStr)) {
+      return;
+    }
     this.service.toggleDateSelection(dateStr);
   }
 }

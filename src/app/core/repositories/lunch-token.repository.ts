@@ -87,6 +87,9 @@ export class LunchTokenRepository {
 
     if (error) {
       if (error.code === '23505') {
+        if (error.message?.includes('user_id') || error.details?.includes('user_id')) {
+          throw new Error('You have already registered a Short Name.');
+        }
         throw new Error(`The Short Name "${trimmed}" is already registered.`);
       }
       throw error;

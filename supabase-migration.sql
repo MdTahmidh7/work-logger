@@ -89,12 +89,10 @@ create table if not exists lunch_token_users (
   short_name text not null,
   normalized_short_name text not null unique,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  constraint ck_short_name_length check (char_length(btrim(short_name)) >= 2),
+  constraint ck_normalized_short_name check (normalized_short_name = lower(btrim(short_name)))
 );
-
--- Indexes for lunch_token_users
-create index if not exists idx_lunch_token_users_normalized on lunch_token_users(normalized_short_name);
-create index if not exists idx_lunch_token_users_user_id on lunch_token_users(user_id);
 
 -- 2. Lunch Token Reservations Table
 create table if not exists lunch_token_reservations (
@@ -103,7 +101,8 @@ create table if not exists lunch_token_reservations (
   reservation_date date not null,
   token_count integer not null default 1 check (token_count > 0),
   created_at timestamptz not null default now(),
-  constraint uq_user_reservation_date unique(lunch_token_user_id, reservation_date)
+  constraint uq_user_reservation_date unique(lunch_token_user_id, reservation_date),
+  constraint ck_working_day check (extract(dow from reservation_date) between 0 and 4)
 );
 
 -- Indexes for lunch_token_reservations
