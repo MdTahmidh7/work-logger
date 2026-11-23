@@ -5,8 +5,9 @@ import {
   LunchTokenReservation,
   LunchTokenHistoryFilter,
   LunchTokenHistoryResult,
-  LunchTokenHistoryItem,
+  LunchTokenDailyHistoryItem,
 } from '../models/lunch-token.model';
+import { format, parseISO } from 'date-fns';
 
 @Injectable({ providedIn: 'root' })
 export class LunchTokenRepository {
@@ -32,13 +33,18 @@ export class LunchTokenRepository {
   }
 
   private mapReservationRow(row: any): LunchTokenReservation {
+    const userJoin = row.lunch_token_users;
+    const shortNameVal = Array.isArray(userJoin)
+      ? userJoin[0]?.short_name
+      : userJoin?.short_name;
+
     return {
       id: row.id,
       lunchTokenUserId: row.lunch_token_user_id,
       reservationDate: row.reservation_date,
       tokenCount: row.token_count,
       createdAt: row.created_at,
-      shortName: row.lunch_token_users?.short_name || undefined,
+      shortName: shortNameVal || undefined,
     };
   }
 
@@ -146,12 +152,10 @@ export class LunchTokenRepository {
     filter: LunchTokenHistoryFilter
   ): Promise<LunchTokenHistoryResult> {
     const { page, pageSize, startDate, endDate, shortName } = filter;
-    const from = page * pageSize;
-    const to = from + pageSize - 1;
 
     let query = this.supabase.supabase
       .from(this.RESERVATIONS_TABLE)
-      .select('id, lunch_token_user_id, reservation_date, token_count, created_at, lunch_token_users!inner(short_name, normalized_short_name)', { count: 'exact' });
+      .select('id, lunch_token_user_id, reservation_date, token_count, created_at, lunch_token_users!inner(short_name, normalized_short_name)');
 
     if (startDate) {
       query = query.gte('reservation_date', startDate);
@@ -159,53 +163,67 @@ export class LunchTokenRepository {
     if (endDate) {
       query = query.lte('reservation_date', endDate);
     }
-    if (shortName && shortName.trim()) {
-      const normalized = shortName.trim().toLowerCase();
-      query = query.ilike('lunch_token_users.normalized_short_name', `%${normalized}%`);
-    }
 
     query = query
       .order('reservation_date', { ascending: false })
-      .order('created_at', { ascending: true })
-      .range(from, to);
+      .order('created_at', { ascending: true });
 
-    const { data, count, error } = await query;
+    const { data, error } = await query;
     if (error) throw error;
 
     const rawRows = data || [];
-    const totalCount = count || 0;
-    const totalPages = Math.ceil(totalCount / pageSize);
 
-    // Extract unique dates on this page to fetch daily totals across all users
-    const uniqueDates = Array.from(new Set(rawRows.map((r: any) => r.reservation_date)));
-    const dailyTotalsMap = new Map<string, number>();
+    // Group rows by reservation_date into a Map so each day is exactly 1 row
+    const dateMap = new Map<string, { date: string; users: { shortName: string; tokenCount: number }[]; totalTokens: number }>();
 
-    if (uniqueDates.length > 0) {
-      const { data: dateAggregates, error: aggError } = await this.supabase.supabase
-        .from(this.RESERVATIONS_TABLE)
-        .select('reservation_date, token_count')
-        .in('reservation_date', uniqueDates);
+    for (const row of (rawRows as any[])) {
+      const dateStr = row.reservation_date;
+      const userJoin = row.lunch_token_users;
+      const shortNameVal = Array.isArray(userJoin)
+        ? userJoin[0]?.short_name || 'Unknown'
+        : userJoin?.short_name || 'Unknown';
+      const tokenCountVal = row.token_count || 1;
 
-      if (!aggError && dateAggregates) {
-        for (const row of dateAggregates) {
-          const prev = dailyTotalsMap.get(row.reservation_date) || 0;
-          dailyTotalsMap.set(row.reservation_date, prev + row.token_count);
-        }
+      let group = dateMap.get(dateStr);
+      if (!group) {
+        group = {
+          date: dateStr,
+          users: [],
+          totalTokens: 0,
+        };
+        dateMap.set(dateStr, group);
       }
+
+      group.users.push({
+        shortName: shortNameVal,
+        tokenCount: tokenCountVal,
+      });
+      group.totalTokens += tokenCountVal;
     }
 
-    const items: LunchTokenHistoryItem[] = rawRows.map((row: any) => {
-      const dateStr = row.reservation_date;
-      const d = new Date(dateStr);
-      const dayName = d.toLocaleDateString('en-US', { weekday: 'long' });
+    // Convert map to array of days
+    let dailyList = Array.from(dateMap.values());
+
+    // If shortName filter is active, filter days where at least one user matches the short name
+    if (shortName && shortName.trim()) {
+      const search = shortName.trim().toLowerCase();
+      dailyList = dailyList.filter((day) =>
+        day.users.some((u) => u.shortName.toLowerCase().includes(search))
+      );
+    }
+
+    const totalCount = dailyList.length;
+    const totalPages = Math.ceil(totalCount / pageSize);
+    const paginatedDays = dailyList.slice(page * pageSize, (page + 1) * pageSize);
+
+    const items: LunchTokenDailyHistoryItem[] = paginatedDays.map((d) => {
+      const dayDate = parseISO(d.date);
+      const dayName = format(dayDate, 'EEEE');
       return {
-        id: row.id,
-        reservationDate: dateStr,
+        reservationDate: d.date,
         dayName,
-        shortName: row.lunch_token_users?.short_name || 'Unknown',
-        tokenCount: row.token_count,
-        dailyTotalTokens: dailyTotalsMap.get(dateStr) || row.token_count,
-        createdAt: row.created_at,
+        users: d.users,
+        totalTokens: d.totalTokens,
       };
     });
 

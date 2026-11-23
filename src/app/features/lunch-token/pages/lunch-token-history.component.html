@@ -127,12 +127,11 @@
                 <th class="col-date">Date</th>
                 <th class="col-day">Day</th>
                 <th class="col-user">Reserved by</th>
-                <th class="col-count text-center">Token Count</th>
                 <th class="col-total text-center">Total Token</th>
               </tr>
             </thead>
             <tbody>
-              @for (item of records(); track item.id) {
+              @for (item of records(); track item.reservationDate) {
                 <tr [class.weekend-row]="isFridayOrSaturday(item.reservationDate)">
                   <!-- Date Column -->
                   <td class="col-date">
@@ -146,25 +145,26 @@
                     <span class="day-text">{{ item.dayName }}</span>
                   </td>
 
-                  <!-- Reserved by Column -->
+                  <!-- Reserved by Column (Colleague Chips with Individual Counts) -->
                   <td class="col-user">
-                    <div class="user-chip">
-                      <mat-icon>person</mat-icon>
-                      <span class="short-name">{{ item.shortName }}</span>
+                    <div class="users-chips-container">
+                      @for (user of item.users; track user.shortName) {
+                        <div class="user-token-chip">
+                          <mat-icon class="user-avatar-icon">person</mat-icon>
+                          <span class="short-name">{{ user.shortName }}</span>
+                          <span class="count-pill" [matTooltip]="user.shortName + ' reserved ' + user.tokenCount + ' token' + (user.tokenCount === 1 ? '' : 's')">
+                            <span class="count-num">{{ user.tokenCount }}</span>
+                            <span class="count-label">token{{ user.tokenCount === 1 ? '' : 's' }}</span>
+                          </span>
+                        </div>
+                      }
                     </div>
-                  </td>
-
-                  <!-- Token Count Column -->
-                  <td class="col-count text-center">
-                    <span class="token-count-badge">
-                      {{ item.tokenCount }}
-                    </span>
                   </td>
 
                   <!-- Total Token Column (Daily total for all users) -->
                   <td class="col-total text-center">
-                    <span class="daily-total-badge" matTooltip="Total tokens booked by all colleagues for this date">
-                      {{ item.dailyTotalTokens }}
+                    <span class="daily-total-badge" [matTooltip]="'Total: ' + item.totalTokens + ' tokens on ' + item.dayName">
+                      {{ item.totalTokens }}
                     </span>
                   </td>
                 </tr>

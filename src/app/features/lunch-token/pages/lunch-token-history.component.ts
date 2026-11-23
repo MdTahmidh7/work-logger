@@ -7,7 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { LunchTokenService } from '../services/lunch-token.service';
 import { NotificationService } from '../../../core/services/notification.service';
-import { LunchTokenHistoryItem, LunchTokenHistoryFilter } from '../../../core/models/lunch-token.model';
+import { LunchTokenDailyHistoryItem, LunchTokenHistoryFilter } from '../../../core/models/lunch-token.model';
 import { format, parseISO } from 'date-fns';
 
 @Component({
@@ -29,7 +29,7 @@ export class LunchTokenHistoryComponent implements OnInit {
   private notify = inject(NotificationService);
 
   loading = signal<boolean>(true);
-  records = signal<LunchTokenHistoryItem[]>([]);
+  records = signal<LunchTokenDailyHistoryItem[]>([]);
   totalCount = signal<number>(0);
   totalPages = signal<number>(0);
   currentPage = signal<number>(0);
