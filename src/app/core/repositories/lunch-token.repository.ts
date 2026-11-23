@@ -1,6 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from '../services/supabase.service';
-import { LunchTokenUser, LunchTokenReservation } from '../models/lunch-token.model';
+import {
+  LunchTokenUser,
+  LunchTokenReservation,
+  LunchTokenHistoryFilter,
+  LunchTokenHistoryResult,
+  LunchTokenHistoryItem,
+} from '../models/lunch-token.model';
 
 @Injectable({ providedIn: 'root' })
 export class LunchTokenRepository {
@@ -134,5 +140,80 @@ export class LunchTokenRepository {
       }
       throw error;
     }
+  }
+
+  async getReservationsHistory(
+    filter: LunchTokenHistoryFilter
+  ): Promise<LunchTokenHistoryResult> {
+    const { page, pageSize, startDate, endDate, shortName } = filter;
+    const from = page * pageSize;
+    const to = from + pageSize - 1;
+
+    let query = this.supabase.supabase
+      .from(this.RESERVATIONS_TABLE)
+      .select('id, lunch_token_user_id, reservation_date, token_count, created_at, lunch_token_users!inner(short_name, normalized_short_name)', { count: 'exact' });
+
+    if (startDate) {
+      query = query.gte('reservation_date', startDate);
+    }
+    if (endDate) {
+      query = query.lte('reservation_date', endDate);
+    }
+    if (shortName && shortName.trim()) {
+      const normalized = shortName.trim().toLowerCase();
+      query = query.ilike('lunch_token_users.normalized_short_name', `%${normalized}%`);
+    }
+
+    query = query
+      .order('reservation_date', { ascending: false })
+      .order('created_at', { ascending: true })
+      .range(from, to);
+
+    const { data, count, error } = await query;
+    if (error) throw error;
+
+    const rawRows = data || [];
+    const totalCount = count || 0;
+    const totalPages = Math.ceil(totalCount / pageSize);
+
+    // Extract unique dates on this page to fetch daily totals across all users
+    const uniqueDates = Array.from(new Set(rawRows.map((r: any) => r.reservation_date)));
+    const dailyTotalsMap = new Map<string, number>();
+
+    if (uniqueDates.length > 0) {
+      const { data: dateAggregates, error: aggError } = await this.supabase.supabase
+        .from(this.RESERVATIONS_TABLE)
+        .select('reservation_date, token_count')
+        .in('reservation_date', uniqueDates);
+
+      if (!aggError && dateAggregates) {
+        for (const row of dateAggregates) {
+          const prev = dailyTotalsMap.get(row.reservation_date) || 0;
+          dailyTotalsMap.set(row.reservation_date, prev + row.token_count);
+        }
+      }
+    }
+
+    const items: LunchTokenHistoryItem[] = rawRows.map((row: any) => {
+      const dateStr = row.reservation_date;
+      const d = new Date(dateStr);
+      const dayName = d.toLocaleDateString('en-US', { weekday: 'long' });
+      return {
+        id: row.id,
+        reservationDate: dateStr,
+        dayName,
+        shortName: row.lunch_token_users?.short_name || 'Unknown',
+        tokenCount: row.token_count,
+        dailyTotalTokens: dailyTotalsMap.get(dateStr) || row.token_count,
+        createdAt: row.created_at,
+      };
+    });
+
+    return {
+      items,
+      totalCount,
+      totalPages,
+      currentPage: page,
+    };
   }
 }

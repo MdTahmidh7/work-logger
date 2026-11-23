@@ -1,5 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { ShortNameCardComponent } from './components/short-name-card/short-name-card.component';
 import { DateSelectionCardComponent } from './components/date-selection-card/date-selection-card.component';
@@ -12,6 +13,7 @@ import { LunchTokenService } from './services/lunch-token.service';
   selector: 'app-lunch-token',
   imports: [
     CommonModule,
+    RouterModule,
     MatIconModule,
     ShortNameCardComponent,
     DateSelectionCardComponent,

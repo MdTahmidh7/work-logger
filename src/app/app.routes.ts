@@ -58,6 +58,11 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'lunch-token/history',
+    loadComponent: () => import('./features/lunch-token/pages/lunch-token-history.component').then(m => m.default || m.LunchTokenHistoryComponent),
+    canActivate: [authGuard],
+  },
+  {
     path: 'settings',
     loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent),
     canActivate: [authGuard],

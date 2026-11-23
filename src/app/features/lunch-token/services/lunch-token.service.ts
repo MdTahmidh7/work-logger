@@ -1,6 +1,11 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { LunchTokenRepository } from '../../../core/repositories/lunch-token.repository';
-import { LunchTokenUser, SelectedDateToken } from '../../../core/models/lunch-token.model';
+import {
+  LunchTokenUser,
+  SelectedDateToken,
+  LunchTokenHistoryFilter,
+  LunchTokenHistoryResult,
+} from '../../../core/models/lunch-token.model';
 import { NotificationService } from '../../../core/services/notification.service';
 import { format, parseISO, startOfWeek, addDays } from 'date-fns';
 
@@ -297,6 +302,10 @@ export class LunchTokenService {
     } finally {
       this.submitting.set(false);
     }
+  }
+
+  async getReservationsHistory(filter: LunchTokenHistoryFilter): Promise<LunchTokenHistoryResult> {
+    return this.repo.getReservationsHistory(filter);
   }
 }
 

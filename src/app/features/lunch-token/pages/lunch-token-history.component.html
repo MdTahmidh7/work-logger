@@ -1,0 +1,208 @@
+<div class="history-page">
+  <div class="page-container">
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-content">
+        <div class="title-with-icon">
+          <div class="header-icon-badge">
+            <mat-icon>history_edu</mat-icon>
+          </div>
+          <div>
+            <h1 class="page-title">Lunch Token History</h1>
+            <p class="page-subtitle">Shared office reservations across all team members</p>
+          </div>
+        </div>
+
+        <a routerLink="/lunch-token" class="new-reservation-btn">
+          <mat-icon>add_circle</mat-icon>
+          <span>New Reservation</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- Filters Section -->
+    <section class="filters-card">
+      <div class="filters-grid">
+        <!-- From Date -->
+        <div class="filter-group">
+          <label>From Date</label>
+          <div class="input-wrap">
+            <mat-icon>event</mat-icon>
+            <input
+              type="date"
+              [ngModel]="filterStartDate()"
+              (ngModelChange)="filterStartDate.set($event)"
+            />
+          </div>
+        </div>
+
+        <!-- To Date -->
+        <div class="filter-group">
+          <label>To Date</label>
+          <div class="input-wrap">
+            <mat-icon>event</mat-icon>
+            <input
+              type="date"
+              [ngModel]="filterEndDate()"
+              (ngModelChange)="filterEndDate.set($event)"
+            />
+          </div>
+        </div>
+
+        <!-- Short Name Search -->
+        <div class="filter-group grow">
+          <label>Reserved By (Short Name)</label>
+          <div class="input-wrap">
+            <mat-icon>search</mat-icon>
+            <input
+              type="text"
+              placeholder="Search by colleague short name..."
+              [ngModel]="filterShortName()"
+              (ngModelChange)="filterShortName.set($event)"
+              (keyup.enter)="applyFilters()"
+            />
+          </div>
+        </div>
+
+        <!-- Filter Actions -->
+        <div class="filter-actions">
+          <button
+            type="button"
+            mat-flat-button
+            class="apply-btn"
+            (click)="applyFilters()"
+            [disabled]="loading()"
+          >
+            <mat-icon>filter_list</mat-icon>
+            <span>Apply</span>
+          </button>
+
+          @if (hasActiveFilters()) {
+            <button
+              type="button"
+              mat-stroked-button
+              class="clear-btn"
+              (click)="clearFilters()"
+              [disabled]="loading()"
+            >
+              <mat-icon>close</mat-icon>
+              <span>Clear</span>
+            </button>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Table Section -->
+    <section class="table-card">
+      @if (loading()) {
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <span>Loading reservations history...</span>
+        </div>
+      } @else if (records().length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon">
+            <mat-icon>event_busy</mat-icon>
+          </div>
+          <h3>No reservations found</h3>
+          <p>
+            @if (hasActiveFilters()) {
+              No reservations matched your filter criteria. Try adjusting or clearing your filters.
+            } @else {
+              No lunch token reservations have been submitted yet.
+            }
+          </p>
+          @if (hasActiveFilters()) {
+            <button mat-stroked-button color="primary" (click)="clearFilters()">
+              Clear Filters
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="table-container">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th class="col-date">Date</th>
+                <th class="col-day">Day</th>
+                <th class="col-user">Reserved by</th>
+                <th class="col-count text-center">Token Count</th>
+                <th class="col-total text-center">Total Token</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of records(); track item.id) {
+                <tr [class.weekend-row]="isFridayOrSaturday(item.reservationDate)">
+                  <!-- Date Column -->
+                  <td class="col-date">
+                    <span class="date-badge">
+                      {{ formatDate(item.reservationDate) }}
+                    </span>
+                  </td>
+
+                  <!-- Day Column -->
+                  <td class="col-day">
+                    <span class="day-text">{{ item.dayName }}</span>
+                  </td>
+
+                  <!-- Reserved by Column -->
+                  <td class="col-user">
+                    <div class="user-chip">
+                      <mat-icon>person</mat-icon>
+                      <span class="short-name">{{ item.shortName }}</span>
+                    </div>
+                  </td>
+
+                  <!-- Token Count Column -->
+                  <td class="col-count text-center">
+                    <span class="token-count-badge">
+                      {{ item.tokenCount }}
+                    </span>
+                  </td>
+
+                  <!-- Total Token Column (Daily total for all users) -->
+                  <td class="col-total text-center">
+                    <span class="daily-total-badge" matTooltip="Total tokens booked by all colleagues for this date">
+                      {{ item.dailyTotalTokens }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination Controls -->
+        <footer class="pagination-footer">
+          <div class="pagination-info">
+            Showing Page <strong>{{ currentPage() + 1 }}</strong> of <strong>{{ totalPages() || 1 }}</strong>
+            <span class="total-records">({{ totalCount() }} total record{{ totalCount() === 1 ? '' : 's' }})</span>
+          </div>
+
+          <div class="pagination-actions">
+            <button
+              type="button"
+              mat-stroked-button
+              [disabled]="currentPage() === 0 || loading()"
+              (click)="prevPage()"
+            >
+              <mat-icon>chevron_left</mat-icon>
+              <span>Previous</span>
+            </button>
+
+            <button
+              type="button"
+              mat-stroked-button
+              [disabled]="currentPage() >= totalPages() - 1 || loading()"
+              (click)="nextPage()"
+            >
+              <span>Next</span>
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+          </div>
+        </footer>
+      }
+    </section>
+  </div>
+</div>
