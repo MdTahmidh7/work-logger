@@ -24,14 +24,16 @@ export interface SelectedDateToken {
   alreadyReserved?: boolean;
 }
 
-export interface LunchTokenHistoryItem {
-  id: number;
-  reservationDate: string; // 'yyyy-MM-dd'
-  dayName: string;
+export interface DailyReservedUser {
   shortName: string;
   tokenCount: number;
-  dailyTotalTokens: number;
-  createdAt: string;
+}
+
+export interface LunchTokenDailyHistoryItem {
+  reservationDate: string; // 'yyyy-MM-dd'
+  dayName: string;
+  users: DailyReservedUser[];
+  totalTokens: number;
 }
 
 export interface LunchTokenHistoryFilter {
@@ -43,7 +45,7 @@ export interface LunchTokenHistoryFilter {
 }
 
 export interface LunchTokenHistoryResult {
-  items: LunchTokenHistoryItem[];
+  items: LunchTokenDailyHistoryItem[];
   totalCount: number;
   totalPages: number;
   currentPage: number;
