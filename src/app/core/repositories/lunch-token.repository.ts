@@ -33,13 +33,18 @@ export class LunchTokenRepository {
   }
 
   private mapReservationRow(row: any): LunchTokenReservation {
+    const userJoin = row.lunch_token_users;
+    const shortNameVal = Array.isArray(userJoin)
+      ? userJoin[0]?.short_name
+      : userJoin?.short_name;
+
     return {
       id: row.id,
       lunchTokenUserId: row.lunch_token_user_id,
       reservationDate: row.reservation_date,
       tokenCount: row.token_count,
       createdAt: row.created_at,
-      shortName: row.lunch_token_users?.short_name || undefined,
+      shortName: shortNameVal || undefined,
     };
   }
 
@@ -171,9 +176,12 @@ export class LunchTokenRepository {
     // Group rows by reservation_date into a Map so each day is exactly 1 row
     const dateMap = new Map<string, { date: string; users: { shortName: string; tokenCount: number }[]; totalTokens: number }>();
 
-    for (const row of rawRows) {
+    for (const row of (rawRows as any[])) {
       const dateStr = row.reservation_date;
-      const shortNameVal = row.lunch_token_users?.short_name || 'Unknown';
+      const userJoin = row.lunch_token_users;
+      const shortNameVal = Array.isArray(userJoin)
+        ? userJoin[0]?.short_name || 'Unknown'
+        : userJoin?.short_name || 'Unknown';
       const tokenCountVal = row.token_count || 1;
 
       let group = dateMap.get(dateStr);
